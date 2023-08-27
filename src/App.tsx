@@ -1,22 +1,11 @@
 import { Canvas } from "@react-three/fiber";
-import { MyShader } from "./MyShader";
 import { Scene } from "./Scene";
+import { r3f } from "./Helper";
 
 function App() {
   return (
     <>
-      <Canvas 
-        shadows
-        camera={
-          {
-            fov: 30,
-          }
-        }
-      >
-        <Scene>
-          <MyShader />
-        </Scene>
-      </Canvas>
+
     </>
   )
 }
