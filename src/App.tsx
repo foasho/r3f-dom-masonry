@@ -1,11 +1,16 @@
-import { Canvas } from "@react-three/fiber";
-import { Scene } from "./Scene";
-import { r3f } from "./Helper";
+import { R3FDomAlign, DomItemProps } from "./R3FDomAlign";
+
+const items: Array<DomItemProps> = [
+  {
+    height: 250,
+    title: "1"
+  },
+];
 
 function App() {
   return (
     <>
-
+      <R3FDomAlign items={items} />
     </>
   )
 }

@@ -1,18 +1,44 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   Canvas,
   useFrame
 } from "@react-three/fiber";
-import { ShaderMaterial } from "three";
+import { Color, ShaderMaterial, Vector2, Vector3, Mesh } from "three";
 import { r3f } from "./Helper";
 import { Scene } from "./Scene";
 
-const Object = () => {
+interface ObjectProps {
+  target: HTMLDivElement;
+  color1?: string;
+  color2?: string;
+  radius?: number;
+}
+const Object = (
+  {
+    target,
+    color1 = "#000000",
+    color2 = "#ffffff",
+    radius = 20,
+  }: ObjectProps
+) => {
+  const ref = useRef<Mesh>(null);
+
+  console.log("Object: ", 
+    target,
+    color1,
+    color2,
+    radius
+  );
 
   const shaderMaterial = useMemo(() => {
     return new ShaderMaterial({
       uniforms: {
-
+        // uTime: { value: Math.random() * 10 },
+        // uResolution: { value: new Vector2() },
+        // uNoiseScale: { value: Math.random() },
+        // uColor1: { value: new Color(color1) },
+        // uColor2: { value: new Color(color2) },
+        // uBorderRadius: { value: radius },
       },
       vertexShader: `
         void main() {
@@ -30,7 +56,15 @@ const Object = () => {
 
   useEffect(() => {
     const resize = () => {
-
+      const rect = target.getBoundingClientRect();
+      if (ref.current){
+        ref.current.scale.set(
+          rect.width * 1,
+          rect.height * 1,
+          1
+        )
+      }
+      // setScale(new Vector3(width, height, 1));
     }
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
@@ -41,19 +75,34 @@ const Object = () => {
   });
 
   return (
-    <mesh>
+    <mesh
+      ref={ref}
+    >
       <planeGeometry args={[1, 1]} />
       <primitive attach="material" object={shaderMaterial} />
     </mesh>
   )
 }
 
-interface R3FDomAlingItemProps {}
-
-interface R3FDomAlignProps {
-  items: Array<R3FDomAlingItemProps>;
+export interface R3FDomAlignProps {
+  items: Array<DomItemProps>;
 }
-export const R3FDomAlign = (props: R3FDomAlignProps) => {
+export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
+
+  const { items } = props;
+
+  // itemsをグリッドに分割するロジック
+  const chunkedItems: any[] = [];
+  let chunk: any[] = [];
+  
+  items.forEach((item, index) => {
+    chunk.push(item);
+    if ((index + 1) % 3 === 0 || index === items.length - 1) {
+      chunkedItems.push(chunk);
+      chunk = [];
+    }
+  });
+
   return (
     <>
       {/** Canvas */}
@@ -76,6 +125,7 @@ export const R3FDomAlign = (props: R3FDomAlignProps) => {
         <Scene isOrbit={false}>
         </Scene>
       </Canvas>
+
       {/** Dom */}
       <div
         style={{
@@ -87,8 +137,14 @@ export const R3FDomAlign = (props: R3FDomAlignProps) => {
           zIndex: 1,
         }}
       >
-        <div>
-          
+        <div className={`grid grid-cols-2 md:grid-cols-4 gap-4`}>
+          {chunkedItems.map((itemChunk, chunkIndex) => (
+            <div className="grid gap-4" key={chunkIndex}>
+              {itemChunk.map((item: any, itemIndex: any) => (
+                <DomItem key={itemIndex} {...item} />
+              ))}
+            </div>
+          ))}
         </div>
         <r3f.Out />
       </div>
@@ -96,15 +152,17 @@ export const R3FDomAlign = (props: R3FDomAlignProps) => {
   )
 }
 
-interface DomItemProps {
-  width: number;
+export interface DomItemProps {
   height: number;
   title: string;
 }
 const DomItem = ({...props}: DomItemProps) => {
-
+  const { height, title } = props;
   return (
-    <>
-    </>
+    <div style={{ height: `${height}px` }}>
+      <div className="h-full max-w-full rounded-lg bg-gray-600">
+        {title}
+      </div>
+    </div>
   )
 }
