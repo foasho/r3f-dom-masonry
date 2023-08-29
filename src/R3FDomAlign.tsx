@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef, createContext, useContext } from "react";
 import {
   Canvas,
   useFrame
@@ -54,21 +54,21 @@ const Object = (
     });
   }, []);
 
-  useEffect(() => {
-    const resize = () => {
-      const rect = target.getBoundingClientRect();
-      if (ref.current){
-        ref.current.scale.set(
-          rect.width * 1,
-          rect.height * 1,
-          1
-        )
-      }
-      // setScale(new Vector3(width, height, 1));
-    }
-    window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
-  }, []);
+  // useEffect(() => {
+  //   const resize = () => {
+  //     const rect = target.getBoundingClientRect();
+  //     if (ref.current){
+  //       ref.current.scale.set(
+  //         rect.width * 1,
+  //         rect.height * 1,
+  //         1
+  //       )
+  //     }
+  //     // setScale(new Vector3(width, height, 1));
+  //   }
+  //   window.addEventListener("resize", resize);
+  //   return () => window.removeEventListener("resize", resize);
+  // }, []);
 
   useFrame((_, state) => {
 
@@ -84,10 +84,41 @@ const Object = (
   )
 }
 
+const R3FDomAlignContext = createContext<{
+  scale: number;
+  fov: number;
+  aspect: number;
+  isCameraFixed: boolean;
+  cameraPosition: Vector3;
+  setCameraPosition: (position: Vector3) => void;
+}>({
+  scale: 1,
+  fov: 52,
+  aspect: 1,
+  isCameraFixed: false,
+  cameraPosition: new Vector3(0, 0, 300),
+  setCameraPosition: () => {},
+});
 export interface R3FDomAlignProps {
   items: Array<DomItemProps>;
 }
 export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
+
+  const scale = useRef<number>(1);
+  const fov = 52;
+  const [aspect, setAspect] = useState<number>(1);
+  const [isCameraFixed, setIsCameraFixed] = useState<boolean>(false);
+  const [cameraPosition, setCameraPosition] = useState<Vector3>(new Vector3(0, 0, 300));
+  const dimensions = useRef<Vector2>(new Vector2(0, 0));
+
+  useEffect(() => {
+    const resize = () => {
+      const { innerWidth, innerHeight } = window;
+      setAspect(innerWidth / innerHeight);
+    }
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
 
   const { items } = props;
 
@@ -104,7 +135,14 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
   });
 
   return (
-    <>
+    <R3FDomAlignContext.Provider value={{
+      scale: scale.current,
+      fov: fov,
+      aspect: aspect,
+      isCameraFixed: isCameraFixed,
+      cameraPosition: cameraPosition,
+      setCameraPosition: setCameraPosition,
+    }}>
       {/** Canvas */}
       <Canvas 
         shadows
@@ -114,15 +152,17 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
         }}
         camera={
           {
-            fov: 52,
-            aspect: 1,
+            fov: fov,
+            aspect: aspect,
             near: 0.01,
             far: 10000,
-            position: [0, 0, 300]
+            position: cameraPosition,
           }
         }
       >
         <Scene isOrbit={false}>
+          <CanvasSystem />
+          <r3f.Out />
         </Scene>
       </Canvas>
 
@@ -146,10 +186,14 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
             </div>
           ))}
         </div>
-        <r3f.Out />
       </div>
-    </>
+    </R3FDomAlignContext.Provider>
   )
+}
+
+const CanvasSystem = () => {
+
+  return (<></>)
 }
 
 export interface DomItemProps {
@@ -157,12 +201,47 @@ export interface DomItemProps {
   title: string;
 }
 const DomItem = ({...props}: DomItemProps) => {
+  const { 
+    fov, 
+    isCameraFixed, 
+    cameraPosition, 
+    setCameraPosition, 
+    aspect 
+  } = useContext(R3FDomAlignContext);
+  const [ready, setReady] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
   const { height, title } = props;
+
+  const resize = (w: number, h: number, s: number) => {}
+
+  useEffect(() => {
+    
+    // Zの位置を1/2Hを計算し、設定する
+    const z = height / Math.tan(fov * Math.PI / 360) * 0.5;
+    let scale = 1;
+
+    if (isCameraFixed){
+      scale = cameraPosition.z / z;
+    }
+    else {
+      setCameraPosition(new Vector3(0, 0, z));
+      scale = 1;
+    }
+
+    
+
+  }, [aspect]);
+
   return (
-    <div style={{ height: `${height}px` }}>
-      <div className="h-full max-w-full rounded-lg bg-gray-600">
+    <div ref={ref} style={{ height: `${height}px` }}>
+      <div className="h-full max-w-full rounded-lg bg-gray-600 solid">
         {title}
       </div>
+      {ready && 
+        <r3f.In>
+          
+        </r3f.In>
+      }
     </div>
   )
 }
