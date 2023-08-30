@@ -6,7 +6,7 @@ const items: Array<DomItemProps> = [
     title: "1"
   },
   {
-    height: 250,
+    height: 210,
     title: "2"
   },
   {
