@@ -1,14 +1,19 @@
 import React, { useEffect, useMemo, useState, useRef, createContext, useContext } from "react";
 import {
   Canvas,
-  useFrame
+  useFrame,
+  useThree
 } from "@react-three/fiber";
-import { Color, ShaderMaterial, Vector2, Vector3, Mesh } from "three";
+import { Color, ShaderMaterial, Vector2, Vector3, Mesh, PerspectiveCamera } from "three";
 import { r3f } from "./Helper";
 import { Scene } from "./Scene";
+import { OrbitControls } from "@react-three/drei";
 
 interface ObjectProps {
   target: HTMLDivElement;
+  planePosition: React.MutableRefObject<Vector3>;
+  planeScale: React.MutableRefObject<Vector3>;
+  scale?: React.MutableRefObject<number>;
   color1?: string;
   color2?: string;
   radius?: number;
@@ -16,29 +21,25 @@ interface ObjectProps {
 const Object = (
   {
     target,
+    planePosition,
+    planeScale,
+    scale = useRef<number>(1),
     color1 = "#000000",
     color2 = "#ffffff",
     radius = 20,
   }: ObjectProps
 ) => {
+
   const ref = useRef<Mesh>(null);
-
-  console.log("Object: ", 
-    target,
-    color1,
-    color2,
-    radius
-  );
-
   const shaderMaterial = useMemo(() => {
     return new ShaderMaterial({
       uniforms: {
-        // uTime: { value: Math.random() * 10 },
-        // uResolution: { value: new Vector2() },
-        // uNoiseScale: { value: Math.random() },
-        // uColor1: { value: new Color(color1) },
-        // uColor2: { value: new Color(color2) },
-        // uBorderRadius: { value: radius },
+        uTime: { value: Math.random() * 10 },
+        uResolution: { value: new Vector2() },
+        uNoiseScale: { value: Math.random() },
+        uColor1: { value: new Color(color1) },
+        uColor2: { value: new Color(color2) },
+        uBorderRadius: { value: radius },
       },
       vertexShader: `
         void main() {
@@ -46,6 +47,14 @@ const Object = (
         }
       `,
       fragmentShader: `
+        
+        uniform float uTime;
+        uniform vec2 uResolution;
+        uniform float uNoiseScale;
+        uniform vec3 uColor1;
+        uniform vec3 uColor2;
+        uniform float uBorderRadius;
+
         void main() {
           gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
         }
@@ -54,24 +63,24 @@ const Object = (
     });
   }, []);
 
-  // useEffect(() => {
-  //   const resize = () => {
-  //     const rect = target.getBoundingClientRect();
-  //     if (ref.current){
-  //       ref.current.scale.set(
-  //         rect.width * 1,
-  //         rect.height * 1,
-  //         1
-  //       )
-  //     }
-  //     // setScale(new Vector3(width, height, 1));
-  //   }
-  //   window.addEventListener("resize", resize);
-  //   return () => window.removeEventListener("resize", resize);
-  // }, []);
-
-  useFrame((_, state) => {
-
+  useFrame((state, delta) => {
+    // console.log("render");
+    // console.log("scale", scale.current);
+    // console.log("planeScale", planeScale);
+    // console.log("planePosition", planePosition);
+    if (
+      ref.current &&
+      planePosition.current &&
+      planeScale.current
+    ){
+      ref.current.position.copy(planePosition.current);
+      ref.current.scale.copy(planeScale.current);
+    }
+    shaderMaterial.uniforms.uTime.value += delta;
+    if (target){
+      target.style.borderRadius = `${radius}px`;
+    }
+    shaderMaterial.uniforms.uBorderRadius.value = radius * scale.current;
   });
 
   return (
@@ -79,20 +88,21 @@ const Object = (
       ref={ref}
     >
       <planeGeometry args={[1, 1]} />
-      <primitive attach="material" object={shaderMaterial} />
+      <meshStandardMaterial color="#00ff00" />
+      {/* <primitive attach="material" object={shaderMaterial} /> */}
     </mesh>
   )
 }
 
 const R3FDomAlignContext = createContext<{
-  scale: number;
+  scale: React.MutableRefObject<number>;
   fov: number;
   aspect: number;
   isCameraFixed: boolean;
   cameraPosition: Vector3;
   setCameraPosition: (position: Vector3) => void;
 }>({
-  scale: 1,
+  scale: { current: 1 },
   fov: 52,
   aspect: 1,
   isCameraFixed: false,
@@ -111,11 +121,28 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
   const [cameraPosition, setCameraPosition] = useState<Vector3>(new Vector3(0, 0, 300));
   const dimensions = useRef<Vector2>(new Vector2(0, 0));
 
-  useEffect(() => {
-    const resize = () => {
-      const { innerWidth, innerHeight } = window;
-      setAspect(innerWidth / innerHeight);
+  const resize = () => {
+    console.log("resize");
+    const { innerWidth, innerHeight } = window;
+    dimensions.current.set(innerWidth, innerHeight);
+
+    // Zの位置を1/2Hを計算し、設定する
+    let z = innerHeight / Math.tan(fov * Math.PI / 360) * 0.5;
+
+    if (isCameraFixed){
+      scale.current = cameraPosition.z / z;
     }
+    else {
+      setCameraPosition(new Vector3(0, 0, z));
+      scale.current = 1;
+    }
+
+    // 再レンダを発火させる
+    setAspect(innerWidth / innerHeight);
+    
+  }
+
+  useEffect(() => {
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
   }, []);
@@ -136,7 +163,7 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
 
   return (
     <R3FDomAlignContext.Provider value={{
-      scale: scale.current,
+      scale: scale,
       fov: fov,
       aspect: aspect,
       isCameraFixed: isCameraFixed,
@@ -162,6 +189,13 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
       >
         <Scene isOrbit={false}>
           <CanvasSystem />
+          {/* <mesh
+            scale={300}
+          >
+            <planeGeometry args={[1, 1]} />
+            <meshStandardMaterial color="#00ff00" />
+          </mesh> */}
+          {/* <OrbitControls /> */}
           <r3f.Out />
         </Scene>
       </Canvas>
@@ -174,7 +208,7 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
           left: 0,
           width: "100vw",
           height: "100vh",
-          zIndex: 1,
+          zIndex: 1
         }}
       >
         <div className={`grid grid-cols-2 md:grid-cols-4 gap-4`}>
@@ -193,6 +227,21 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
 
 const CanvasSystem = () => {
 
+  const { camera } = useThree();
+  const { aspect } = useContext(R3FDomAlignContext);
+
+  useEffect(() => {
+    (camera as PerspectiveCamera).aspect = aspect;
+    camera.updateProjectionMatrix();
+  }, [aspect]);
+
+  useFrame((state, delta) => {
+    const posX = state.camera.position.x.toFixed(2);
+    const posY = state.camera.position.y.toFixed(2);
+    const posZ = state.camera.position.z.toFixed(2);
+    // console.log(`camera position: ${posX}, ${posY}, ${posZ}`);
+  });
+
   return (<></>)
 }
 
@@ -201,47 +250,66 @@ export interface DomItemProps {
   title: string;
 }
 const DomItem = ({...props}: DomItemProps) => {
+
   const { 
-    fov, 
-    isCameraFixed, 
-    cameraPosition, 
-    setCameraPosition, 
-    aspect 
+    aspect,
+    scale,
   } = useContext(R3FDomAlignContext);
-  const [ready, setReady] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+
+  const planeScale = useRef<Vector3>(new Vector3(1, 1, 1));
+  const planePosition = useRef<Vector3>(new Vector3(0, 0, 0));
+  const target = useRef<HTMLDivElement>(null);
+  const resolution = useRef<Vector2>(new Vector2(0, 0));
   const { height, title } = props;
 
-  const resize = (w: number, h: number, s: number) => {}
+  const resize = (w: number, h: number, s: number) => {
+    scale.current = s;
+    if (!target.current) return;
+    const rect = target.current.getBoundingClientRect();
+    // Resolitionを更新する
+    resolution.current.set(rect.width * s, rect.height * s);
+    // リサイズ時に、planeのScaleを再設定する
+    planeScale.current = 
+      new Vector3(
+        rect.width / s,
+        rect.height / s,
+        1
+      );
+    // リサイズ時に、planeのPositionを再設定する
+    planePosition.current = 
+      new Vector3(
+        (rect.left + rect.width * 0.5 - w * 0.5) * s,
+        (-rect.top - rect.height * 0.5 + h * 0.5) * s,
+        0
+      );
+  }
 
   useEffect(() => {
-    
-    // Zの位置を1/2Hを計算し、設定する
-    const z = height / Math.tan(fov * Math.PI / 360) * 0.5;
-    let scale = 1;
-
-    if (isCameraFixed){
-      scale = cameraPosition.z / z;
-    }
-    else {
-      setCameraPosition(new Vector3(0, 0, z));
-      scale = 1;
-    }
-
-    
-
+    resize(
+      window.innerWidth, 
+      window.innerHeight, 
+      scale.current
+    );
   }, [aspect]);
 
+  console.log("render");
+  console.log("scale", scale.current);
+  console.log("planeScale", planeScale);
+  console.log("planePosition", planePosition);
+
   return (
-    <div ref={ref} style={{ height: `${height}px` }}>
-      <div className="h-full max-w-full rounded-lg bg-gray-600 solid">
+    <div ref={target} style={{ height: `${height}px` }}>
+      <div className="h-full max-w-full rounded-lg border-2 border-indigo-600">
         {title}
       </div>
-      {ready && 
-        <r3f.In>
-          
-        </r3f.In>
-      }
+      <r3f.In>
+        <Object
+          planePosition={planePosition}
+          planeScale={planeScale}
+          target={target.current!} 
+          scale={scale} 
+        />
+      </r3f.In>
     </div>
   )
 }

@@ -5,6 +5,30 @@ const items: Array<DomItemProps> = [
     height: 250,
     title: "1"
   },
+  {
+    height: 250,
+    title: "2"
+  },
+  {
+    height: 250,
+    title: "3"
+  },
+  {
+    height: 250,
+    title: "4"
+  },
+  {
+    height: 250,
+    title: "5"
+  },
+  {
+    height: 250,
+    title: "6"
+  },
+  {
+    height: 250,
+    title: "7"
+  },
 ];
 
 function App() {
