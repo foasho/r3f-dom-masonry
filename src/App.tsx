@@ -45,7 +45,6 @@ function App() {
       width: "80%",
       height: "100vh",
       margin: "0 auto",
-      // paddingTop: "20px",
     }}>
       <R3FDomAlign items={items} />
     </div>
