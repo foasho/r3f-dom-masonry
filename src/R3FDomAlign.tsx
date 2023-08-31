@@ -17,13 +17,10 @@ const colors = [
 ]
 
 interface ObjectProps {
-  parentRect: DOMRect;
   target: HTMLDivElement;
   planePosition: React.MutableRefObject<Vector3>;
   planeScale: React.MutableRefObject<Vector3>;
   scale?: React.MutableRefObject<number>;
-  color1?: string;
-  color2?: string;
   radius?: number;
 }
 const Object = (
@@ -32,8 +29,6 @@ const Object = (
     planePosition,
     planeScale,
     scale = useRef<number>(1),
-    color1 = "#00ff00",
-    color2 = "#ffff00",
     radius = 20,
   }: ObjectProps
 ) => {
@@ -41,6 +36,7 @@ const Object = (
   const ref = useRef<Mesh>(null);
   const shaderMaterial = useMemo(() => {
     const colorIndex = [0, 1, 2, 3, 4];
+    // ランダムで色を２つ取得
     let colorIndex1 = colorIndex.splice(Math.floor(colorIndex.length * Math.random()), 1)[0]
     let colorIndex2 = colorIndex.splice(Math.floor(colorIndex.length * Math.random()), 1)[0]
 
@@ -265,9 +261,6 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
     }
   });
 
-  // item数に応じてgrid-col数クラスを設定する
-  
-
   return (
     <R3FDomAlignContext.Provider value={{
       scale: scale,
@@ -296,7 +289,7 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
             }
           }
         >
-          <Scene isOrbit={false}>
+          <Scene isOrbit={false} isGizmo={false}>
             <CanvasSystem />
             <r3f.Out />
           </Scene>
@@ -329,6 +322,9 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
   )
 }
 
+/**
+ * CameraのAspectを更新するシステムコンポネント
+ */
 const CanvasSystem = () => {
 
   const { camera } = useThree();
@@ -344,7 +340,9 @@ const CanvasSystem = () => {
 
 export interface DomItemProps {
   height: number;
-  title: string;
+  type: "image" | "video" | "element";
+  element?: React.JSX.Element;
+  src?: string;
 }
 const DomItem = ({...props}: DomItemProps) => {
 
@@ -358,7 +356,7 @@ const DomItem = ({...props}: DomItemProps) => {
   const planePosition = useRef<Vector3>(new Vector3(0, 0, 0));
   const target = useRef<HTMLDivElement>(null);
   const resolution = useRef<Vector2>(new Vector2(0, 0));
-  const { height, title } = props;
+  const { height, type, element, src } = props;
 
   const resize = (w: number, h: number, s: number) => {
     scale.current = s;
@@ -400,12 +398,13 @@ const DomItem = ({...props}: DomItemProps) => {
           borderRadius: "20px",
         }}
       >
-        {title}
+        {type === "element" && element &&
+          element
+        }
       </div>
       <r3f.In>
         {parentRect &&
           <Object
-            parentRect={parentRect}
             planePosition={planePosition}
             planeScale={planeScale}
             target={target.current!} 

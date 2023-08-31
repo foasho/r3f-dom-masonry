@@ -3,31 +3,39 @@ import { R3FDomAlign, DomItemProps } from "./R3FDomAlign";
 const items: Array<DomItemProps> = [
   {
     height: 250,
-    title: "1"
+    element: <div>Sample</div>,
+    type: "element",
+    // src: "https://picsum.photos/200/300",
   },
   {
     height: 210,
-    title: "2"
+    element: <div>Sample</div>,
+    type: "element",
   },
   {
     height: 250,
-    title: "3"
+    element: <div>Sample</div>,
+    type: "element",
   },
   {
     height: 250,
-    title: "4"
+    element: <div>Sample</div>,
+    type: "element",
   },
   {
     height: 250,
-    title: "5"
+    element: <div>Sample</div>,
+    type: "element",
   },
   {
     height: 250,
-    title: "6"
+    element: <div>Sample</div>,
+    type: "element",
   },
   {
     height: 250,
-    title: "7"
+    element: <div>Sample</div>,
+    type: "element",
   },
 ];
 
