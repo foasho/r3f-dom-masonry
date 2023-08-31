@@ -1,15 +1,14 @@
-# ReactThreeFiber + Shader + Vite
+# ReactThreeFiber + DomAlignment Masonry
 
-- Typescritp
+- Typescript
 
-## インストール(Install)
-```
-git clone https://github.com/foasho/r3f-ts-vite-shader.git
-```
+**参考**
+1. NakanoMisaki様: three-dom-alignment
+https://github.com/mnmxmx/three-dom-alignment/tree/master
+
 
 ## 起動方法(Usage)
 ```
-cd r3f-ts-vite-shader
 pnpm install
 pnpm run dev
 ```
