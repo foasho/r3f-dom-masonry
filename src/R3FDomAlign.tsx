@@ -17,6 +17,7 @@ const colors = [
 ]
 
 interface ObjectProps {
+  parentRect: DOMRect;
   target: HTMLDivElement;
   planePosition: React.MutableRefObject<Vector3>;
   planeScale: React.MutableRefObject<Vector3>;
@@ -119,13 +120,35 @@ const Object = (
         
         
         void main(){
+          // Colorを作成する
           vec2 aspect = uResolution / max(uResolution.x, uResolution.y);
-          float time = uTime * 0.4;
+          float speed = 0.5;
+          float time = uTime * speed;
           vec2 st = vUv;
-          float colorFactor = snoise3D(vec3(st, time)) * 0.5 + 0.5;
+          // st -= 0.5;
+          // st *= aspect;
+          // st *= mix(0.5, 1.0, uNoiseScale);
+          // st += 0.5;
+          float noise = snoise3D(vec3(st, time));
+          float colorFactor = noise * 0.5 + 0.5;
           vec3 color = mix(uColor1, uColor2, colorFactor);
+
+          // 上下左右のSquare
+          vec2 alphaUv = vUv - 0.5;
+          float borderRadius = min(uBorderRadius, min(uResolution.x, uResolution.y) * 0.5);
+          vec2 offset = vec2(borderRadius) / uResolution;
+          vec2 alphaXY = smoothstep(vec2(0.5 - offset), vec2(0.5 - offset - 0.001), abs(alphaUv));
+          float alpha = min(1.0, alphaXY.x + alphaXY.y);
         
-          gl_FragColor = vec4(color, 1.0);
+          // 角のborderRadius
+          vec2 alphaUv2 = abs(vUv - 0.5);
+          float radius = borderRadius / max(uResolution.x, uResolution.y);
+          alphaUv2 = (alphaUv2 - 0.5) * aspect + radius;
+          float roundAlpha = smoothstep(radius + 0.001, radius, length(alphaUv2));
+        
+          alpha = min(1.0, alpha + roundAlpha);
+        
+          gl_FragColor = vec4(color, alpha);
         }
       `,
       transparent: true,
@@ -140,6 +163,13 @@ const Object = (
     ){
       ref.current.position.copy(planePosition.current);
       ref.current.scale.copy(planeScale.current);
+    }
+    // Resolutionを更新
+    if (target){
+      const rect = target.getBoundingClientRect();
+      shaderMaterial.uniforms.uResolution.value.set(
+        rect.width * scale.current, rect.height * scale.current
+      );
     }
     shaderMaterial.uniforms.uTime.value += delta;
     if (target){
@@ -162,6 +192,7 @@ const R3FDomAlignContext = createContext<{
   scale: React.MutableRefObject<number>;
   fov: number;
   aspect: number;
+  rect: DOMRect | null;
   isCameraFixed: boolean;
   cameraPosition: Vector3;
   setCameraPosition: (position: Vector3) => void;
@@ -169,6 +200,7 @@ const R3FDomAlignContext = createContext<{
   scale: { current: 1 },
   fov: 52,
   aspect: 1,
+  rect: null,
   isCameraFixed: false,
   cameraPosition: new Vector3(0, 0, 300),
   setCameraPosition: () => {},
@@ -179,18 +211,23 @@ export interface R3FDomAlignProps {
 }
 
 export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
-
+  
+  const ref = useRef<HTMLDivElement>(null);
   const scale = useRef<number>(1);
   const fov = 52;
+  const [rect, setRect] = useState<DOMRect | null>(null);
   const [aspect, setAspect] = useState<number>(1);
   const [isCameraFixed, setIsCameraFixed] = useState<boolean>(false);
   const [cameraPosition, setCameraPosition] = useState<Vector3>(new Vector3(0, 0, 300));
   const dimensions = useRef<Vector2>(new Vector2(0, 0));
 
   const resize = () => {
-    console.log("resize");
-    const { innerWidth, innerHeight } = window;
-    dimensions.current.set(innerWidth, innerHeight);
+    if (!ref.current) return;
+    const { current } = ref;
+    const dom = current.getBoundingClientRect();
+    const _w = dom.width;
+    const _h = dom.height;
+    dimensions.current.set(_w, _h);
 
     // Zの位置を1/2Hを計算し、設定する
     let z = innerHeight / Math.tan(fov * Math.PI / 360) * 0.5;
@@ -204,8 +241,8 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
     }
 
     // 再レンダを発火させる
-    setAspect(innerWidth / innerHeight);
-    
+    setAspect(_w / _h);
+    setRect(dom);
   }
 
   useEffect(() => {
@@ -228,57 +265,64 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
     }
   });
 
+  // item数に応じてgrid-col数クラスを設定する
+  
+
   return (
     <R3FDomAlignContext.Provider value={{
       scale: scale,
       fov: fov,
       aspect: aspect,
+      rect: rect,
       isCameraFixed: isCameraFixed,
       cameraPosition: cameraPosition,
       setCameraPosition: setCameraPosition,
     }}>
-      {/** Canvas */}
-      <Canvas 
-        shadows
-        gl={{
-          antialias: true,
-          alpha: true,
-        }}
-        camera={
-          {
-            fov: fov,
-            aspect: aspect,
-            near: 0.01,
-            far: 10000,
-            position: cameraPosition,
+      <div ref={ref} className="w-full h-full relative">
+        {/** Canvas */}
+        <Canvas 
+          shadows
+          gl={{
+            antialias: true,
+            alpha: true,
+          }}
+          camera={
+            {
+              fov: fov,
+              aspect: aspect,
+              near: 0.01,
+              far: 10000,
+              position: cameraPosition,
+            }
           }
-        }
-      >
-        <Scene isOrbit={false}>
-          <CanvasSystem />
-          <r3f.Out />
-        </Scene>
-      </Canvas>
+        >
+          <Scene isOrbit={false}>
+            <CanvasSystem />
+            <r3f.Out />
+          </Scene>
+        </Canvas>
 
-      {/** Dom */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100vw",
-          height: "100vh",
-          zIndex: 1
-        }}
-      >
-        <div className={`grid grid-cols-2 md:grid-cols-4 gap-4`}>
-          {chunkedItems.map((itemChunk, chunkIndex) => (
-            <div className="grid gap-4" key={chunkIndex}>
-              {itemChunk.map((item: any, itemIndex: any) => (
-                <DomItem key={itemIndex} {...item} />
-              ))}
-            </div>
-          ))}
+        {/** Dom */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100vh",
+            zIndex: 1,
+            alignItems: "center",
+          }}
+        >
+          <div className={`grid grid-cols-2 md:grid-cols-3 gap-4`}>
+            {chunkedItems.map((itemChunk, chunkIndex) => (
+              <div className="grid gap-4" key={chunkIndex}>
+                {itemChunk.map((item: any, itemIndex: any) => (
+                  <DomItem key={itemIndex} {...item} />
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </R3FDomAlignContext.Provider>
@@ -295,13 +339,6 @@ const CanvasSystem = () => {
     camera.updateProjectionMatrix();
   }, [aspect]);
 
-  useFrame((state, delta) => {
-    const posX = state.camera.position.x.toFixed(2);
-    const posY = state.camera.position.y.toFixed(2);
-    const posZ = state.camera.position.z.toFixed(2);
-    // console.log(`camera position: ${posX}, ${posY}, ${posZ}`);
-  });
-
   return (<></>)
 }
 
@@ -314,6 +351,7 @@ const DomItem = ({...props}: DomItemProps) => {
   const { 
     aspect,
     scale,
+    rect: parentRect
   } = useContext(R3FDomAlignContext);
 
   const planeScale = useRef<Vector3>(new Vector3(1, 1, 1));
@@ -324,7 +362,7 @@ const DomItem = ({...props}: DomItemProps) => {
 
   const resize = (w: number, h: number, s: number) => {
     scale.current = s;
-    if (!target.current) return;
+    if (!target.current || !parentRect) return;
     const rect = target.current.getBoundingClientRect();
     // Resolitionを更新する
     resolution.current.set(rect.width * s, rect.height * s);
@@ -336,39 +374,44 @@ const DomItem = ({...props}: DomItemProps) => {
         1
       );
     // リサイズ時に、planeのPositionを再設定する
+    // parentRectも考慮する
     planePosition.current = 
       new Vector3(
-        (rect.left + rect.width * 0.5 - w * 0.5) * s,
-        (-rect.top - rect.height * 0.5 + h * 0.5) * s,
+        (rect.left - parentRect.left + rect.width * 0.5 - w * 0.5) * s,
+        (-rect.top + parentRect.top - rect.height * 0.5 + h * 0.5) * s,
         0
       );
   }
 
   useEffect(() => {
+    if (!parentRect) return;
     resize(
-      window.innerWidth, 
-      window.innerHeight, 
+      parentRect.width,
+      parentRect.height,
       scale.current
     );
-  }, [aspect]);
-
-  console.log("render");
-  console.log("scale", scale.current);
-  console.log("planeScale", planeScale);
-  console.log("planePosition", planePosition);
+  }, [aspect, parentRect]);
 
   return (
     <div ref={target} style={{ height: `${height}px` }}>
-      <div className="h-full max-w-full rounded-lg border-2 border-indigo-600">
+      <div 
+        className="h-full px-2 max-w-full border-2 border-indigo-600"
+        style={{
+          borderRadius: "20px",
+        }}
+      >
         {title}
       </div>
       <r3f.In>
-        <Object
-          planePosition={planePosition}
-          planeScale={planeScale}
-          target={target.current!} 
-          scale={scale} 
-        />
+        {parentRect &&
+          <Object
+            parentRect={parentRect}
+            planePosition={planePosition}
+            planeScale={planeScale}
+            target={target.current!} 
+            scale={scale} 
+          />
+        }
       </r3f.In>
     </div>
   )

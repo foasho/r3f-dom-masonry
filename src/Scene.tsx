@@ -5,19 +5,23 @@ import { OrbitControls, Box, GizmoHelper, GizmoViewport } from "@react-three/dre
 interface SceneProps {
   isGizmo?: boolean;
   isOrbit?: boolean;
+  bgColor?: string | undefined;
   children?: React.ReactNode;
 }
 export const Scene = (
   { 
     isGizmo=true,
     isOrbit=true,
+    bgColor=undefined,
     children=null
   }:SceneProps
 ) => {
 
   return (
     <>
-      <color attach="background" args={["#ececec"]} />
+      {bgColor &&
+        <color attach="background" args={["#ececec"]} />
+      }
       <ambientLight intensity={0.75} />
       <directionalLight position={[5, 10, 3]} intensity={1} />
       {children?
