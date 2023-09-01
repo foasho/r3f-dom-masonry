@@ -7,13 +7,14 @@ import {
 import { Color, ShaderMaterial, Vector2, Vector3, Mesh, PerspectiveCamera } from "three";
 import { r3f } from "./Helper";
 import { Scene } from "./Scene";
-import { ScrollEventProvider } from "./useScrollEvent";
+import { ScrollEventProvider, useScrollEvent } from "./useScrollEvent";
 // 本家のSimplexNoize: 著(Nakano Misaki)
 import snoiseFrag from "./glsl/snoise.frag";
 import snoiseVert from "./glsl/snoise.vert";
 // Image: 著(かまぼこ)
 import imageFrag from "./glsl/image.frag";
 import imageVert from "./glsl/image.vert";
+import { useTexture } from "@react-three/drei";
 
 const colors = [
   0x5c6fff,
@@ -21,7 +22,11 @@ const colors = [
   0xff94bd,
   0xa9defe,
   0xfed462
-]
+];
+
+export interface UniformsProps {
+  [Key: string]: { value: number };
+}
 
 interface ObjectProps {
   target: HTMLDivElement;
@@ -29,6 +34,7 @@ interface ObjectProps {
   planeScale: React.MutableRefObject<Vector3>;
   scale?: React.MutableRefObject<number>;
   radius?: number;
+  texture?: string;
 }
 const Object = (
   {
@@ -37,9 +43,11 @@ const Object = (
     planeScale,
     scale = useRef<number>(1),
     radius = 20,
+    texture = undefined,
   }: ObjectProps
 ) => {
-
+  // const tex = useTexture(texture!);
+  const { offsetPx } = useContext(R3FDomAlignContext);
   const ref = useRef<Mesh>(null);
   const shaderMaterial = useMemo(() => {
     const colorIndex = [0, 1, 2, 3, 4];
@@ -68,7 +76,12 @@ const Object = (
       planePosition.current &&
       planeScale.current
     ){
-      ref.current.position.copy(planePosition.current);
+      // scrollOffsetを考慮して、planeの位置を更新
+      const newPosition = planePosition.current.clone();
+      if (offsetPx.current > 1){
+        newPosition.add(new Vector3(0, offsetPx.current * scale.current, 0));
+      }
+      ref.current.position.copy(newPosition);
       ref.current.scale.copy(planeScale.current);
     }
     // Resolutionを更新
@@ -103,6 +116,8 @@ const R3FDomAlignContext = createContext<{
   isCameraFixed: boolean;
   cameraPosition: Vector3;
   setCameraPosition: (position: Vector3) => void;
+  offset: React.MutableRefObject<number>;
+  offsetPx: React.MutableRefObject<number>;
 }>({
   scale: { current: 1 },
   fov: 52,
@@ -111,6 +126,8 @@ const R3FDomAlignContext = createContext<{
   isCameraFixed: false,
   cameraPosition: new Vector3(0, 0, 300),
   setCameraPosition: () => {},
+  offset: { current: 0 },
+  offsetPx: { current: 0 },
 });
 
 export interface R3FDomAlignProps {
@@ -123,6 +140,9 @@ export interface R3FDomAlignProps {
 export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
   
   const ref = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const offset = useRef<number>(0);  // 0~1でスクロールの割合を保持
+  const offsetPx = useRef<number>(0);  // pxでスクロールの割合を保持
   const scale = useRef<number>(1);
   const fov = 52;
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -155,10 +175,32 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
     setRect(dom);
   }
 
+  const handleScroll = () => {
+    // Offsetの計算
+    if (scrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      offset.current = scrollTop / (scrollHeight - clientHeight);
+      offsetPx.current = scrollTop;
+    }
+  };
+
   useEffect(() => {
     resize();
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
+  }, []);
+
+  useEffect(() => {
+    handleScroll();
+    // スクロールイベントの登録
+    if (scrollRef.current) {
+      scrollRef.current.addEventListener("scroll", handleScroll);
+    }
+    return () => {
+      if (scrollRef.current) {
+        scrollRef.current.removeEventListener("scroll", handleScroll);
+      }
+    };
   }, []);
 
   const { items } = props;
@@ -184,8 +226,9 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
       isCameraFixed: isCameraFixed,
       cameraPosition: cameraPosition,
       setCameraPosition: setCameraPosition,
+      offset : offset,
+      offsetPx: offsetPx,
     }}>
-      <ScrollEventProvider>
         <div ref={ref} className="w-full h-full relative">
           {/** Canvas */}
           <Canvas 
@@ -210,6 +253,7 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
             </Scene>
           </Canvas>
 
+
           {/** Dom */}
           <div
             style={{
@@ -222,18 +266,22 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
               alignItems: "center",
             }}
           >
-            <div className={`grid grid-cols-2 md:grid-cols-3 gap-4`}>
-              {chunkedItems.map((itemChunk, chunkIndex) => (
-                <div className="grid gap-4" key={chunkIndex}>
-                  {itemChunk.map((item: any, itemIndex: any) => (
-                    <DomItem key={itemIndex} {...item} />
-                  ))}
-                </div>
-              ))}
+              <div
+                className="overflow-y-auto h-full w-full"
+                ref={scrollRef}
+              >
+              <div className={`grid grid-cols-2 md:grid-cols-3 gap-4`}>
+                {chunkedItems.map((itemChunk, chunkIndex) => (
+                  <div className="grid gap-4" key={chunkIndex}>
+                    {itemChunk.map((item: any, itemIndex: any) => (
+                      <DomItem key={itemIndex} {...item} />
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </ScrollEventProvider>
     </R3FDomAlignContext.Provider>
   )
 }
@@ -267,9 +315,9 @@ const DomItem = ({...props}: DomItemProps) => {
   const { 
     aspect,
     scale,
-    rect: parentRect
+    rect: parentRect,
+    offset,
   } = useContext(R3FDomAlignContext);
-
   const planeScale = useRef<Vector3>(new Vector3(1, 1, 1));
   const planePosition = useRef<Vector3>(new Vector3(0, 0, 0));
   const target = useRef<HTMLDivElement>(null);
@@ -291,10 +339,12 @@ const DomItem = ({...props}: DomItemProps) => {
       );
     // リサイズ時に、planeのPositionを再設定する
     // parentRectも考慮する
+    const newPlanePositionX = (rect.left - parentRect.left + rect.width * 0.5 - w * 0.5) * s;
+    let newPlanePositionY = (-rect.top + parentRect.top - rect.height * 0.5 + h * 0.5) * s;
     planePosition.current = 
       new Vector3(
-        (rect.left - parentRect.left + rect.width * 0.5 - w * 0.5) * s,
-        (-rect.top + parentRect.top - rect.height * 0.5 + h * 0.5) * s,
+        newPlanePositionX,
+        newPlanePositionY,
         0
       );
   }
@@ -311,14 +361,12 @@ const DomItem = ({...props}: DomItemProps) => {
   return (
     <div ref={target} style={{ height: `${height}px` }}>
       <div 
-        className="h-full px-2 max-w-full border-2 border-indigo-600"
+        className="h-full px-2 max-w-full border-2 border-indigo-600 relative"
         style={{
           borderRadius: "20px",
         }}
       >
-        {type === "element" && element &&
-          element
-        }
+        {element}
       </div>
       <r3f.In>
         {parentRect &&
@@ -326,7 +374,7 @@ const DomItem = ({...props}: DomItemProps) => {
             planePosition={planePosition}
             planeScale={planeScale}
             target={target.current!} 
-            scale={scale} 
+            scale={scale}
           />
         }
       </r3f.In>

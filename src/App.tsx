@@ -37,6 +37,26 @@ const items: Array<DomItemProps> = [
     element: <div>Sample</div>,
     type: "element",
   },
+  {
+    height: 250,
+    element: <div>Sample</div>,
+    type: "element",
+  },
+  {
+    height: 250,
+    element: <div>Sample</div>,
+    type: "element",
+  },
+  {
+    height: 250,
+    element: <div>Sample</div>,
+    type: "element",
+  },
+  {
+    height: 250,
+    element: <div>Sample</div>,
+    type: "element",
+  },
 ];
 
 function App() {

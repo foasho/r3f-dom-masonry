@@ -24,12 +24,13 @@ export const useScrollEvent = () => useContext(ScrollEventContext);
  */
 export const ScrollEventProvider = ({
   children,
+  scrollRef,
   fireTime = 1000,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode[];
+  scrollRef: React.RefObject<HTMLDivElement>;
   fireTime?: number;
 }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
   const timer = useRef<any>(null);
 
   // 0~1でスクロールの割合を保持
@@ -69,12 +70,7 @@ export const ScrollEventProvider = ({
         offset: offset.current,
       }}
     >
-      <div
-        className="overflow-y-auto h-full w-full"
-        ref={scrollRef}
-      >
-        {children}
-      </div>
+      {children}
     </ScrollEventContext.Provider>
   );
 };
