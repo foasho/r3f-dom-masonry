@@ -160,7 +160,7 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
     dimensions.current.set(_w, _h);
 
     // Zの位置を1/2Hを計算し、設定する
-    let z = innerHeight / Math.tan(fov * Math.PI / 360) * 0.5;
+    let z = _h / Math.tan(fov * Math.PI / 360) * 0.5;
 
     if (isCameraFixed){
       scale.current = cameraPosition.z / z;
@@ -316,7 +316,7 @@ const DomItem = ({...props}: DomItemProps) => {
     aspect,
     scale,
     rect: parentRect,
-    offset,
+    offsetPx,
   } = useContext(R3FDomAlignContext);
   const planeScale = useRef<Vector3>(new Vector3(1, 1, 1));
   const planePosition = useRef<Vector3>(new Vector3(0, 0, 0));
@@ -347,6 +347,9 @@ const DomItem = ({...props}: DomItemProps) => {
         newPlanePositionY,
         0
       );
+    if (offsetPx.current > 1){
+      planePosition.current.sub(new Vector3(0, offsetPx.current * scale.current, 0));
+    }
   }
 
   useEffect(() => {
