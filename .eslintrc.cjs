@@ -5,8 +5,8 @@ module.exports = {
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
     "plugin:react/recommended",
-    "plugin:storybook/recommended",
     "prettier",
+    "plugin:storybook/recommended"
   ],
   rules: {
     "simple-import-sort/imports": [

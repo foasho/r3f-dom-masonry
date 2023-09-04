@@ -10,21 +10,22 @@ import {
   Texture,
   TextureLoader,
 } from "three";
-import { r3f } from "./Helper";
 import { Scene } from "./Scene";
-import snoiseFrag from "./glsl/snoise.frag";
-import snoiseVert from "./glsl/snoise.vert";
-// Image: 著(かまぼこ)
-import imageFrag from "./glsl/image.frag";
-import imageVert from "./glsl/image.vert";
+import snoiseFrag from "../glsl/snoise.frag";
+import snoiseVert from "../glsl/snoise.vert";
+import imageFrag from "../glsl/image.frag";
+import imageVert from "../glsl/image.vert";
+import tunnel from "tunnel-rat";
+
+export const r3f = tunnel();
 
 const colors = [0x5c6fff, 0xc48aff, 0xff94bd, 0xa9defe, 0xfed462];
 
-export interface UniformsProps {
+export type UniformsProps = {
   [Key: string]: { value: number };
-}
+};
 
-interface ObjectProps {
+type ObjectProps = {
   target: HTMLDivElement;
   planePosition: React.MutableRefObject<Vector3>;
   planeScale: React.MutableRefObject<Vector3>;
@@ -32,7 +33,7 @@ interface ObjectProps {
   radius?: number;
   texture?: string;
   textureAspect?: number;
-}
+};
 const Object = ({
   target,
   planePosition,
@@ -150,13 +151,13 @@ const R3FDomAlignContext = createContext<{
   offsetPx: { current: 0 },
 });
 
-export interface R3FDomAlignProps {
+export type R3FDomAlignProps = {
   isBorderRadius?: boolean;
   borderRadius?: number;
   borderColor?: string;
   borderWidth?: number;
   items: Array<DomItemProps>;
-}
+};
 
 export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
   const isBorderRadius = props.isBorderRadius ? props.isBorderRadius : true;
@@ -204,17 +205,14 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
 
   useEffect(() => {
     resize();
-    window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
-  }, []);
-
-  useEffect(() => {
     handleScroll();
+    window.addEventListener("resize", resize);
     // スクロールイベントの登録
     if (scrollRef.current) {
       scrollRef.current.addEventListener("scroll", handleScroll);
     }
     return () => {
+      window.removeEventListener("resize", resize);
       if (scrollRef.current) {
         scrollRef.current.removeEventListener("scroll", handleScroll);
       }
@@ -224,8 +222,8 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
   const { items } = props;
 
   // itemsをグリッドに分割するロジック
-  const chunkedItems: any[] = [];
-  let chunk: any[] = [];
+  const chunkedItems: DomItemProps[][] = [];
+  let chunk: DomItemProps[] = [];
 
   items.forEach((item, index) => {
     chunk.push(item);
@@ -345,15 +343,18 @@ const CanvasSystem = () => {
   return <></>;
 };
 
-export interface DomItemProps {
+export type DomItemProps = {
   height: number;
-  type: "image" | "element";
   element?: React.JSX.Element;
   src?: string;
   vertexShader?: string;
   fragmentShader?: string;
-}
-const DomItem = ({ ...props }: DomItemProps) => {
+};
+const DomItem = ({ 
+  height = 250,
+  element = <div></div>,
+  src = undefined,
+ }: DomItemProps) => {
   const {
     isBorderRadius,
     borderRadius,
@@ -370,7 +371,6 @@ const DomItem = ({ ...props }: DomItemProps) => {
   const target = useRef<HTMLDivElement>(null);
   const resolution = useRef<Vector2>(new Vector2(0, 0));
   const [textureAspect, setTextureAspect] = useState<number>(1);
-  const { height, element, src } = props;
 
   const resize = (w: number, h: number, s: number) => {
     scale.current = s;
@@ -406,6 +406,9 @@ const DomItem = ({ ...props }: DomItemProps) => {
         setReady(true);
       }
     })();
+    return () => {
+      setReady(false);
+    };
   }, [aspect, parentRect]);
 
   return (
