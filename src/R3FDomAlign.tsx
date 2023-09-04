@@ -4,7 +4,7 @@ import {
   useFrame,
   useThree
 } from "@react-three/fiber";
-import { Color, ShaderMaterial, Vector2, Vector3, Mesh, PerspectiveCamera } from "three";
+import { Color, ShaderMaterial, Vector2, Vector3, Mesh, PerspectiveCamera, Texture, TextureLoader } from "three";
 import { r3f } from "./Helper";
 import { Scene } from "./Scene";
 import snoiseFrag from "./glsl/snoise.frag";
@@ -12,7 +12,6 @@ import snoiseVert from "./glsl/snoise.vert";
 // Image: 著(かまぼこ)
 import imageFrag from "./glsl/image.frag";
 import imageVert from "./glsl/image.vert";
-import { useTexture } from "@react-three/drei";
 
 const colors = [
   0x5c6fff,
@@ -33,6 +32,7 @@ interface ObjectProps {
   scale?: React.MutableRefObject<number>;
   radius?: number;
   texture?: string;
+  textureAspect?: number;
 }
 const Object = (
   {
@@ -42,31 +42,51 @@ const Object = (
     scale = useRef<number>(1),
     radius = 20,
     texture = undefined,
+    textureAspect = 1,
   }: ObjectProps
 ) => {
-  // const tex = useTexture(texture!);
+  const [tex, setTex] = useState<Texture|null>(null);
   const { offsetPx } = useContext(R3FDomAlignContext);
   const ref = useRef<Mesh>(null);
   const shaderMaterial = useMemo(() => {
     const colorIndex = [0, 1, 2, 3, 4];
     // ランダムで色を２つ取得
-    let colorIndex1 = colorIndex.splice(Math.floor(colorIndex.length * Math.random()), 1)[0]
-    let colorIndex2 = colorIndex.splice(Math.floor(colorIndex.length * Math.random()), 1)[0]
+    let colorIndex1 = colorIndex.splice(Math.floor(colorIndex.length * Math.random()), 1)[0];
+    let colorIndex2 = colorIndex.splice(Math.floor(colorIndex.length * Math.random()), 1)[0];
+
+    const uniforms: {[x: string]: { value: any }} = {
+      uTime: { value: Math.random() * 10 },
+      uResolution: { value: new Vector2() },
+      uBorderRadius: { value: radius },
+      uTexture: { value: tex },
+    };
+
+    if (!tex){
+      uniforms.uColor1 = { value: new Color(colors[colorIndex1]) };
+      uniforms.uColor2 = { value: new Color(colors[colorIndex2]) };
+      uniforms.uNoiseScale = { value: Math.random() };
+    }
+    else {
+      uniforms.uTexture = { value: tex };
+      uniforms.uImageAspect = { value: textureAspect };
+      uniforms.uPlaneAspect = { value: 1.0 };
+    }
 
     return new ShaderMaterial({
-      uniforms: {
-        uTime: { value: Math.random() * 10 },
-        uResolution: { value: new Vector2() },
-        uNoiseScale: { value: Math.random() },
-        uColor1: { value: new Color(colors[colorIndex1]) },
-        uColor2: { value: new Color(colors[colorIndex2]) },
-        uBorderRadius: { value: radius },
-      },
-      vertexShader: snoiseVert,
-      fragmentShader: snoiseFrag,
+      uniforms: uniforms,
+      vertexShader: tex? imageVert: snoiseVert,
+      fragmentShader: tex? imageFrag: snoiseFrag,
       transparent: true,
     });
-  }, []);
+  }, [tex]);
+
+  useEffect(() => {
+    if (texture){
+      new TextureLoader().load(texture, (tex) => {
+        setTex(tex);
+      });
+    }
+  }, [texture]);
 
   useFrame((_, delta) => {
     if (
@@ -88,12 +108,17 @@ const Object = (
       shaderMaterial.uniforms.uResolution.value.set(
         rect.width * scale.current, rect.height * scale.current
       );
+      if (tex){
+        shaderMaterial.uniforms.uPlaneAspect.value = rect.width  / rect.height;
+      }
     }
     shaderMaterial.uniforms.uTime.value += delta;
     if (target){
       target.style.borderRadius = `${radius}px`;
     }
-    shaderMaterial.uniforms.uBorderRadius.value = radius * scale.current;
+    if (!tex){
+      shaderMaterial.uniforms.uBorderRadius.value = radius * scale.current;
+    }
   });
 
   return (
@@ -115,7 +140,6 @@ const R3FDomAlignContext = createContext<{
   fov: number;
   aspect: number;
   rect: DOMRect | null;
-  isCameraFixed: boolean;
   cameraPosition: Vector3;
   setCameraPosition: (position: Vector3) => void;
   offset: React.MutableRefObject<number>;
@@ -129,7 +153,6 @@ const R3FDomAlignContext = createContext<{
   fov: 52,
   aspect: 1,
   rect: null,
-  isCameraFixed: false,
   cameraPosition: new Vector3(0, 0, 300),
   setCameraPosition: () => {},
   offset: { current: 0 },
@@ -157,7 +180,6 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
   const fov = 52;
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [aspect, setAspect] = useState<number>(1);
-  const [isCameraFixed, setIsCameraFixed] = useState<boolean>(false);
   const [cameraPosition, setCameraPosition] = useState<Vector3>(new Vector3(0, 0, 300));
   const dimensions = useRef<Vector2>(new Vector2(0, 0));
 
@@ -172,13 +194,9 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
     // Zの位置を1/2Hを計算し、設定する
     let z = _h / Math.tan(fov * Math.PI / 360) * 0.5;
 
-    if (isCameraFixed){
-      scale.current = cameraPosition.z / z;
-    }
-    else {
-      setCameraPosition(new Vector3(0, 0, z));
-      scale.current = 1;
-    }
+
+    setCameraPosition(new Vector3(0, 0, z));
+    scale.current = 1;
 
     // 再レンダを発火させる
     setAspect(_w / _h);
@@ -237,7 +255,6 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
       fov: fov,
       aspect: aspect,
       rect: rect,
-      isCameraFixed: isCameraFixed,
       cameraPosition: cameraPosition,
       setCameraPosition: setCameraPosition,
       offset : offset,
@@ -359,11 +376,13 @@ const DomItem = ({...props}: DomItemProps) => {
     rect: parentRect,
     offsetPx,
   } = useContext(R3FDomAlignContext);
+  const [ready, setReady] = useState<boolean>(false);
   const planeScale = useRef<Vector3>(new Vector3(1, 1, 1));
   const planePosition = useRef<Vector3>(new Vector3(0, 0, 0));
   const target = useRef<HTMLDivElement>(null);
   const resolution = useRef<Vector2>(new Vector2(0, 0));
-  const { height, type, element, src, vertexShader, fragmentShader } = props;
+  const [textureAspect, setTextureAspect] = useState<number>(1);
+  const { height, element, src } = props;
 
   const resize = (w: number, h: number, s: number) => {
     scale.current = s;
@@ -400,6 +419,20 @@ const DomItem = ({...props}: DomItemProps) => {
       parentRect.height,
       scale.current
     );
+    (async () => {
+      // テクスチャのアスペクト比を取得する
+      if (src){
+        const image = new Image();
+        image.src = src;
+        image.onload = () => {
+          setTextureAspect(image.width / image.height);
+          setReady(true);
+        }
+      }
+      else {
+        setReady(true);
+      }
+    })();
   }, [aspect, parentRect]);
 
   return (
@@ -420,13 +453,15 @@ const DomItem = ({...props}: DomItemProps) => {
         {element}
       </div>
       <r3f.In>
-        {parentRect &&
+        {ready && parentRect &&
           <Object
             planePosition={planePosition}
             planeScale={planeScale}
             target={target.current!} 
             scale={scale}
             radius={borderRadius}
+            texture={src}
+            textureAspect={textureAspect}
           />
         }
       </r3f.In>

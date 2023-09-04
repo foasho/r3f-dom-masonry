@@ -5,7 +5,7 @@ const items: Array<DomItemProps> = [
     height: 250,
     element: <div>Sample</div>,
     type: "element",
-    // src: "https://picsum.photos/200/300",
+    src: "https://picsum.photos/200/300",
   },
   {
     height: 210,
