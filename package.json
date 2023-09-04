@@ -10,9 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.11.1",
     "@react-three/drei": "^9.80.1",
     "@react-three/fiber": "^8.13.6",
     "@types/three": "^0.155.0",
+    "css-loader": "^6.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "three": "^0.155.0",

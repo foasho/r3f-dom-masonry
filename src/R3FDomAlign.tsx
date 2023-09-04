@@ -68,7 +68,7 @@ const Object = (
     });
   }, []);
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     if (
       ref.current &&
       planePosition.current &&
@@ -213,20 +213,6 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
     };
   }, []);
 
-  useEffect(() => {
-    // ScrollBarの非表示
-    const styleSheet = document.createElement("style");
-    styleSheet.innerText = `
-      #R3FDomAlignScroll::-webkit-scrollbar {
-        display: none;
-      }
-    `;
-    document.head.appendChild(styleSheet);
-    return () => {
-      document.head.removeChild(styleSheet);
-    }
-  }, []);
-
   const { items } = props;
 
   // itemsをグリッドに分割するロジック
@@ -257,7 +243,14 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
       offset : offset,
       offsetPx: offsetPx,
     }}>
-        <div ref={ref} className="w-full h-full relative">
+        <div 
+          ref={ref} 
+          style={{
+            width: "100%",
+            height: "100%",
+            position: "relative",
+          }}
+        >
           {/** Canvas */}
           <Canvas 
             shadows
@@ -275,7 +268,7 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
               }
             }
           >
-            <Scene isOrbit={false} isGizmo={false}>
+            <Scene>
               <CanvasSystem />
               <r3f.Out />
             </Scene>
@@ -307,9 +300,16 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
                   WebkitOverflowScrolling: "touch",
                 }}
               >
-              <div className={`grid grid-cols-2 md:grid-cols-3 gap-4`}>
+              <div className={"r3fDomAlignGrid"}>
                 {chunkedItems.map((itemChunk, chunkIndex) => (
-                  <div className="grid gap-4" key={chunkIndex}>
+                  <div key={chunkIndex} style={
+                    {
+                      display: "grid",
+                      gap: "1rem",
+                      paddingTop: "2px",
+                      margin: 0,
+                    }
+                  }>
                     {itemChunk.map((item: any, itemIndex: any) => (
                       <DomItem key={itemIndex} {...item} />
                     ))}
@@ -414,6 +414,7 @@ const DomItem = ({...props}: DomItemProps) => {
           borderRadius: borderRadius,
           borderWidth: borderWidth,
           borderStyle: isBorderRadius? "solid": "none",
+          outlineOffset: `-${borderWidth}px`,
         }}
       >
         {element}
