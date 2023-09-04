@@ -7,8 +7,6 @@ import {
 import { Color, ShaderMaterial, Vector2, Vector3, Mesh, PerspectiveCamera } from "three";
 import { r3f } from "./Helper";
 import { Scene } from "./Scene";
-import { ScrollEventProvider, useScrollEvent } from "./useScrollEvent";
-// 本家のSimplexNoize: 著(Nakano Misaki)
 import snoiseFrag from "./glsl/snoise.frag";
 import snoiseVert from "./glsl/snoise.vert";
 // Image: 著(かまぼこ)
@@ -109,6 +107,10 @@ const Object = (
 }
 
 const R3FDomAlignContext = createContext<{
+  isBorderRadius: boolean;
+  borderRadius: number;
+  borderColor: string;
+  borderWidth: number;
   scale: React.MutableRefObject<number>;
   fov: number;
   aspect: number;
@@ -119,6 +121,10 @@ const R3FDomAlignContext = createContext<{
   offset: React.MutableRefObject<number>;
   offsetPx: React.MutableRefObject<number>;
 }>({
+  isBorderRadius: true,
+  borderRadius: 5,
+  borderColor: "#1f2a33",
+  borderWidth: 2,
   scale: { current: 1 },
   fov: 52,
   aspect: 1,
@@ -134,11 +140,15 @@ export interface R3FDomAlignProps {
   isBorderRadius?: boolean;
   borderRadius?: number;
   borderColor?: string;
+  borderWidth?: number;
   items: Array<DomItemProps>;
 }
 
 export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
-  
+  const isBorderRadius = props.isBorderRadius ? props.isBorderRadius : true;
+  const borderRadius = props.borderRadius ? props.borderRadius : 5;
+  const borderWidth = props.borderWidth ? props.borderWidth : 2;
+  const borderColor = props.borderColor ? props.borderColor : "#1f2a33";
   const ref = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const offset = useRef<number>(0);  // 0~1でスクロールの割合を保持
@@ -203,6 +213,20 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
     };
   }, []);
 
+  useEffect(() => {
+    // ScrollBarの非表示
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = `
+      #R3FDomAlignScroll::-webkit-scrollbar {
+        display: none;
+      }
+    `;
+    document.head.appendChild(styleSheet);
+    return () => {
+      document.head.removeChild(styleSheet);
+    }
+  }, []);
+
   const { items } = props;
 
   // itemsをグリッドに分割するロジック
@@ -219,6 +243,10 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
 
   return (
     <R3FDomAlignContext.Provider value={{
+      isBorderRadius: isBorderRadius,
+      borderRadius: borderRadius,
+      borderWidth: borderWidth,
+      borderColor: borderColor,
       scale: scale,
       fov: fov,
       aspect: aspect,
@@ -267,8 +295,17 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
             }}
           >
               <div
-                className="overflow-y-auto h-full w-full"
                 ref={scrollRef}
+                id="R3FDomAlignScroll"
+                style={{
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  height: "100%",
+                  width: "100%",
+                  msOverflowStyle: "none", /* IE, Edge 対応 */
+                  scrollbarWidth: "none",  /* Firefox 対応 */
+                  WebkitOverflowScrolling: "touch",
+                }}
               >
               <div className={`grid grid-cols-2 md:grid-cols-3 gap-4`}>
                 {chunkedItems.map((itemChunk, chunkIndex) => (
@@ -313,6 +350,10 @@ export interface DomItemProps {
 const DomItem = ({...props}: DomItemProps) => {
 
   const { 
+    isBorderRadius,
+    borderRadius,
+    borderWidth,
+    borderColor,
     aspect,
     scale,
     rect: parentRect,
@@ -364,9 +405,15 @@ const DomItem = ({...props}: DomItemProps) => {
   return (
     <div ref={target} style={{ height: `${height}px` }}>
       <div 
-        className="h-full px-2 max-w-full border-2 border-indigo-600 relative"
         style={{
-          borderRadius: "20px",
+          height: "100%",
+          padding: "0 0.5rem",
+          maxWidth: "100%",
+          position: "relative",
+          borderColor: borderColor,
+          borderRadius: borderRadius,
+          borderWidth: borderWidth,
+          borderStyle: isBorderRadius? "solid": "none",
         }}
       >
         {element}
@@ -378,6 +425,7 @@ const DomItem = ({...props}: DomItemProps) => {
             planeScale={planeScale}
             target={target.current!} 
             scale={scale}
+            radius={borderRadius}
           />
         }
       </r3f.In>
