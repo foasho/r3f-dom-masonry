@@ -1,10 +1,15 @@
 import React, { useEffect, useMemo, useState, useRef, createContext, useContext } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
-  Canvas,
-  useFrame,
-  useThree
-} from "@react-three/fiber";
-import { Color, ShaderMaterial, Vector2, Vector3, Mesh, PerspectiveCamera, Texture, TextureLoader } from "three";
+  Color,
+  ShaderMaterial,
+  Vector2,
+  Vector3,
+  Mesh,
+  PerspectiveCamera,
+  Texture,
+  TextureLoader,
+} from "three";
 import { r3f } from "./Helper";
 import { Scene } from "./Scene";
 import snoiseFrag from "./glsl/snoise.frag";
@@ -13,13 +18,7 @@ import snoiseVert from "./glsl/snoise.vert";
 import imageFrag from "./glsl/image.frag";
 import imageVert from "./glsl/image.vert";
 
-const colors = [
-  0x5c6fff,
-  0xc48aff,
-  0xff94bd,
-  0xa9defe,
-  0xfed462
-];
+const colors = [0x5c6fff, 0xc48aff, 0xff94bd, 0xa9defe, 0xfed462];
 
 export interface UniformsProps {
   [Key: string]: { value: number };
@@ -34,18 +33,16 @@ interface ObjectProps {
   texture?: string;
   textureAspect?: number;
 }
-const Object = (
-  {
-    target,
-    planePosition,
-    planeScale,
-    scale = useRef<number>(1),
-    radius = 20,
-    texture = undefined,
-    textureAspect = 1,
-  }: ObjectProps
-) => {
-  const [tex, setTex] = useState<Texture|null>(null);
+const Object = ({
+  target,
+  planePosition,
+  planeScale,
+  scale = useRef<number>(1),
+  radius = 20,
+  texture = undefined,
+  textureAspect = 1,
+}: ObjectProps) => {
+  const [tex, setTex] = useState<Texture | null>(null);
   const { offsetPx } = useContext(R3FDomAlignContext);
   const ref = useRef<Mesh>(null);
   const shaderMaterial = useMemo(() => {
@@ -54,19 +51,18 @@ const Object = (
     let colorIndex1 = colorIndex.splice(Math.floor(colorIndex.length * Math.random()), 1)[0];
     let colorIndex2 = colorIndex.splice(Math.floor(colorIndex.length * Math.random()), 1)[0];
 
-    const uniforms: {[x: string]: { value: any }} = {
+    const uniforms: { [x: string]: { value: any } } = {
       uTime: { value: Math.random() * 10 },
       uResolution: { value: new Vector2() },
       uBorderRadius: { value: radius },
       uTexture: { value: tex },
     };
 
-    if (!tex){
+    if (!tex) {
       uniforms.uColor1 = { value: new Color(colors[colorIndex1]) };
       uniforms.uColor2 = { value: new Color(colors[colorIndex2]) };
       uniforms.uNoiseScale = { value: Math.random() };
-    }
-    else {
+    } else {
       uniforms.uTexture = { value: tex };
       uniforms.uImageAspect = { value: textureAspect };
       uniforms.uPlaneAspect = { value: 1.0 };
@@ -74,14 +70,14 @@ const Object = (
 
     return new ShaderMaterial({
       uniforms: uniforms,
-      vertexShader: tex? imageVert: snoiseVert,
-      fragmentShader: tex? imageFrag: snoiseFrag,
+      vertexShader: tex ? imageVert : snoiseVert,
+      fragmentShader: tex ? imageFrag : snoiseFrag,
       transparent: true,
     });
   }, [tex]);
 
   useEffect(() => {
-    if (texture){
+    if (texture) {
       new TextureLoader().load(texture, (tex) => {
         setTex(tex);
       });
@@ -89,47 +85,42 @@ const Object = (
   }, [texture]);
 
   useFrame((_, delta) => {
-    if (
-      ref.current &&
-      planePosition.current &&
-      planeScale.current
-    ){
+    if (ref.current && planePosition.current && planeScale.current) {
       // scrollOffsetを考慮して、planeの位置を更新
       const newPosition = planePosition.current.clone();
-      if (offsetPx.current > 1){
+      if (offsetPx.current > 1) {
         newPosition.add(new Vector3(0, offsetPx.current * scale.current, 0));
       }
       ref.current.position.copy(newPosition);
       ref.current.scale.copy(planeScale.current);
     }
     // Resolutionを更新
-    if (target){
+    if (target) {
       const rect = target.getBoundingClientRect();
       shaderMaterial.uniforms.uResolution.value.set(
-        rect.width * scale.current, rect.height * scale.current
+        rect.width * scale.current,
+        rect.height * scale.current
       );
-      if (tex){
-        shaderMaterial.uniforms.uPlaneAspect.value = rect.width  / rect.height;
+      if (tex) {
+        shaderMaterial.uniforms.uPlaneAspect.value = rect.width / rect.height;
       }
     }
     shaderMaterial.uniforms.uTime.value += delta;
-    if (target){
+    if (target) {
       target.style.borderRadius = `${radius}px`;
     }
-    if (!tex){
+    if (!tex) {
       shaderMaterial.uniforms.uBorderRadius.value = radius * scale.current;
     }
   });
 
   return (
-    <mesh
-      ref={ref}
-    >
+    <mesh ref={ref}>
       <planeGeometry args={[1, 1]} />
       <primitive attach="material" object={shaderMaterial} />
     </mesh>
-  )
-}
+  );
+};
 
 const R3FDomAlignContext = createContext<{
   isBorderRadius: boolean;
@@ -174,8 +165,8 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
   const borderColor = props.borderColor ? props.borderColor : "#1f2a33";
   const ref = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const offset = useRef<number>(0);  // 0~1でスクロールの割合を保持
-  const offsetPx = useRef<number>(0);  // pxでスクロールの割合を保持
+  const offset = useRef<number>(0); // 0~1でスクロールの割合を保持
+  const offsetPx = useRef<number>(0); // pxでスクロールの割合を保持
   const scale = useRef<number>(1);
   const fov = 52;
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -192,8 +183,7 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
     dimensions.current.set(_w, _h);
 
     // Zの位置を1/2Hを計算し、設定する
-    let z = _h / Math.tan(fov * Math.PI / 360) * 0.5;
-
+    let z = (_h / Math.tan((fov * Math.PI) / 360)) * 0.5;
 
     setCameraPosition(new Vector3(0, 0, z));
     scale.current = 1;
@@ -201,7 +191,7 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
     // 再レンダを発火させる
     setAspect(_w / _h);
     setRect(dom);
-  }
+  };
 
   const handleScroll = () => {
     // Offsetの計算
@@ -236,7 +226,7 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
   // itemsをグリッドに分割するロジック
   const chunkedItems: any[] = [];
   let chunk: any[] = [];
-  
+
   items.forEach((item, index) => {
     chunk.push(item);
     if ((index + 1) % 3 === 0 || index === items.length - 1) {
@@ -246,105 +236,104 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
   });
 
   return (
-    <R3FDomAlignContext.Provider value={{
-      isBorderRadius: isBorderRadius,
-      borderRadius: borderRadius,
-      borderWidth: borderWidth,
-      borderColor: borderColor,
-      scale: scale,
-      fov: fov,
-      aspect: aspect,
-      rect: rect,
-      cameraPosition: cameraPosition,
-      setCameraPosition: setCameraPosition,
-      offset : offset,
-      offsetPx: offsetPx,
-    }}>
-        <div 
-          ref={ref} 
-          style={{
-            width: "100%",
-            height: "100%",
-            position: "relative",
+    <R3FDomAlignContext.Provider
+      value={{
+        isBorderRadius: isBorderRadius,
+        borderRadius: borderRadius,
+        borderWidth: borderWidth,
+        borderColor: borderColor,
+        scale: scale,
+        fov: fov,
+        aspect: aspect,
+        rect: rect,
+        cameraPosition: cameraPosition,
+        setCameraPosition: setCameraPosition,
+        offset: offset,
+        offsetPx: offsetPx,
+      }}
+    >
+      <div
+        ref={ref}
+        style={{
+          width: "100%",
+          height: "100%",
+          position: "relative",
+        }}
+      >
+        {/** Canvas */}
+        <Canvas
+          shadows
+          gl={{
+            antialias: true,
+            alpha: true,
+          }}
+          camera={{
+            fov: fov,
+            aspect: aspect,
+            near: 0.01,
+            far: 10000,
+            position: cameraPosition,
           }}
         >
-          {/** Canvas */}
-          <Canvas 
-            shadows
-            gl={{
-              antialias: true,
-              alpha: true,
-            }}
-            camera={
-              {
-                fov: fov,
-                aspect: aspect,
-                near: 0.01,
-                far: 10000,
-                position: cameraPosition,
-              }
-            }
-          >
-            <Scene>
-              <CanvasSystem />
-              <r3f.Out />
-            </Scene>
-          </Canvas>
+          <Scene>
+            <CanvasSystem />
+            <r3f.Out />
+          </Scene>
+        </Canvas>
 
-
-          {/** Dom */}
+        {/** Dom */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100vh",
+            zIndex: 1,
+            alignItems: "center",
+          }}
+        >
           <div
+            ref={scrollRef}
+            id="R3FDomAlignScroll"
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
+              overflowY: "auto",
+              overflowX: "hidden",
+              height: "100%",
               width: "100%",
-              height: "100vh",
-              zIndex: 1,
-              alignItems: "center",
+              msOverflowStyle: "none" /* IE, Edge 対応 */,
+              scrollbarWidth: "none" /* Firefox 対応 */,
+              WebkitOverflowScrolling: "touch",
             }}
           >
-              <div
-                ref={scrollRef}
-                id="R3FDomAlignScroll"
-                style={{
-                  overflowY: "auto",
-                  overflowX: "hidden",
-                  height: "100%",
-                  width: "100%",
-                  msOverflowStyle: "none", /* IE, Edge 対応 */
-                  scrollbarWidth: "none",  /* Firefox 対応 */
-                  WebkitOverflowScrolling: "touch",
-                }}
-              >
-              <div className={"r3fDomAlignGrid"}>
-                {chunkedItems.map((itemChunk, chunkIndex) => (
-                  <div key={chunkIndex} style={
-                    {
-                      display: "grid",
-                      gap: "1rem",
-                      paddingTop: "2px",
-                      margin: 0,
-                    }
-                  }>
-                    {itemChunk.map((item: any, itemIndex: any) => (
-                      <DomItem key={itemIndex} {...item} />
-                    ))}
-                  </div>
-                ))}
-              </div>
+            <div className={"r3fDomAlignGrid"}>
+              {chunkedItems.map((itemChunk, chunkIndex) => (
+                <div
+                  key={chunkIndex}
+                  style={{
+                    display: "grid",
+                    gap: "1rem",
+                    paddingTop: "2px",
+                    margin: 0,
+                  }}
+                >
+                  {itemChunk.map((item: any, itemIndex: any) => (
+                    <DomItem key={itemIndex} {...item} />
+                  ))}
+                </div>
+              ))}
             </div>
           </div>
         </div>
+      </div>
     </R3FDomAlignContext.Provider>
-  )
-}
+  );
+};
 
 /**
  * CameraのAspectを更新するシステムコンポネント
  */
 const CanvasSystem = () => {
-
   const { camera } = useThree();
   const { aspect } = useContext(R3FDomAlignContext);
 
@@ -353,8 +342,8 @@ const CanvasSystem = () => {
     camera.updateProjectionMatrix();
   }, [aspect]);
 
-  return (<></>)
-}
+  return <></>;
+};
 
 export interface DomItemProps {
   height: number;
@@ -364,9 +353,8 @@ export interface DomItemProps {
   vertexShader?: string;
   fragmentShader?: string;
 }
-const DomItem = ({...props}: DomItemProps) => {
-
-  const { 
+const DomItem = ({ ...props }: DomItemProps) => {
+  const {
     isBorderRadius,
     borderRadius,
     borderWidth,
@@ -391,45 +379,30 @@ const DomItem = ({...props}: DomItemProps) => {
     // Resolitionを更新する
     resolution.current.set(rect.width * s, rect.height * s);
     // リサイズ時に、planeのScaleを再設定する
-    planeScale.current = 
-      new Vector3(
-        rect.width / s,
-        rect.height / s,
-        1
-      );
+    planeScale.current = new Vector3(rect.width / s, rect.height / s, 1);
     // リサイズ時に、planeのPositionを再設定する
     // parentRectも考慮する
     const newPlanePositionX = (rect.left - parentRect.left + rect.width * 0.5 - w * 0.5) * s;
     let newPlanePositionY = (-rect.top + parentRect.top - rect.height * 0.5 + h * 0.5) * s;
-    planePosition.current = 
-      new Vector3(
-        newPlanePositionX,
-        newPlanePositionY,
-        0
-      );
-    if (offsetPx.current > 1){
+    planePosition.current = new Vector3(newPlanePositionX, newPlanePositionY, 0);
+    if (offsetPx.current > 1) {
       planePosition.current.sub(new Vector3(0, offsetPx.current * scale.current, 0));
     }
-  }
+  };
 
   useEffect(() => {
     if (!parentRect) return;
-    resize(
-      parentRect.width,
-      parentRect.height,
-      scale.current
-    );
+    resize(parentRect.width, parentRect.height, scale.current);
     (async () => {
       // テクスチャのアスペクト比を取得する
-      if (src){
+      if (src) {
         const image = new Image();
         image.src = src;
         image.onload = () => {
           setTextureAspect(image.width / image.height);
           setReady(true);
-        }
-      }
-      else {
+        };
+      } else {
         setReady(true);
       }
     })();
@@ -437,7 +410,7 @@ const DomItem = ({...props}: DomItemProps) => {
 
   return (
     <div ref={target} style={{ height: `${height}px` }}>
-      <div 
+      <div
         style={{
           height: "100%",
           padding: "0 0.5rem",
@@ -446,25 +419,25 @@ const DomItem = ({...props}: DomItemProps) => {
           borderColor: borderColor,
           borderRadius: borderRadius,
           borderWidth: borderWidth,
-          borderStyle: isBorderRadius? "solid": "none",
+          borderStyle: isBorderRadius ? "solid" : "none",
           outlineOffset: `-${borderWidth}px`,
         }}
       >
         {element}
       </div>
       <r3f.In>
-        {ready && parentRect &&
+        {ready && parentRect && (
           <Object
             planePosition={planePosition}
             planeScale={planeScale}
-            target={target.current!} 
+            target={target.current!}
             scale={scale}
             radius={borderRadius}
             texture={src}
             textureAspect={textureAspect}
           />
-        }
+        )}
       </r3f.In>
     </div>
-  )
-}
+  );
+};

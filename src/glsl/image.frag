@@ -8,24 +8,24 @@ varying vec2 vUv;
 
 void main(){
   // 画像のアスペクトとプレーンオブジェクトのアスペクトを比較し、短い方に合わせる
-  vec2 ratio = vec2(
-      min(uPlaneAspect / uImageAspect, 1.0),
-      min((1.0 / uPlaneAspect) / (1.0 / uImageAspect), 1.0)
-    );
-  // vec2 ratio = uResolution.xy / min(uResolution.x, uResolution.y);
-
-  // 計算結果を用いてテクスチャを中央に配置
-  vec2 fixedUv = vec2(
-    (vUv.x - 0.5) * ratio.x + 0.5,
-    (vUv.y - 0.5) * ratio.y + 0.5
+  vec2 ratio=vec2(
+    min(uPlaneAspect/uImageAspect,1.),
+    min((1./uPlaneAspect)/(1./uImageAspect),1.)
   );
-
-  vec2 os = vec2(0.0, uTime * 0.0005);
-  float r = texture2D(uTexture, fixedUv + os).r;
-  float g = texture2D(uTexture, fixedUv + os * 0.5).g;
-  float b = texture2D(uTexture, fixedUv).b;
-  vec3 texture = vec3(r, g, b);
-
+  // vec2 ratio = uResolution.xy / min(uResolution.x, uResolution.y);
+  
+  // 計算結果を用いてテクスチャを中央に配置
+  vec2 fixedUv=vec2(
+    (vUv.x-.5)*ratio.x+.5,
+    (vUv.y-.5)*ratio.y+.5
+  );
+  
+  vec2 os=vec2(0.,uTime*.0005);
+  float r=texture2D(uTexture,fixedUv+os).r;
+  float g=texture2D(uTexture,fixedUv+os*.5).g;
+  float b=texture2D(uTexture,fixedUv).b;
+  vec3 texture=vec3(r,g,b);
+  
   // 上下左右のSquare
   vec2 aspect=uResolution/max(uResolution.x,uResolution.y);
   vec2 alphaUv=vUv-.5;
@@ -42,6 +42,6 @@ void main(){
   
   // 2つを足し合わせる
   alpha=min(1.,alpha+roundAlpha);
-
-  gl_FragColor = vec4(texture, alpha);
+  
+  gl_FragColor=vec4(texture,alpha);
 }

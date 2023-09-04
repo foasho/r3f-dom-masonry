@@ -1,0 +1,11 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  // 保存時のアクション
+  "editor.codeActionsOnSave": {
+    // 不足しているimportの追加
+    "source.addMissingImports": true,
+    // ファイルのfix
+    "source.fixAll.eslint": true
+  }
+}

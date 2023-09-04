@@ -14,13 +14,16 @@ body {
   margin: 0;
 }
 
-@media (min-width: 768px) { /* Tailwindのmdブレークポイントはデフォルトで768px */
+@media (min-width: 768px) {
+  /* Tailwindのmdブレークポイントはデフォルトで768px */
   .r3fDomAlignGrid {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
-*, ::before, ::after {
+*,
+::before,
+::after {
   box-sizing: border-box;
   border-width: 0;
   border-style: solid;

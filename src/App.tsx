@@ -61,14 +61,16 @@ const items: Array<DomItemProps> = [
 
 function App() {
   return (
-    <div style={{
-      width: "80%",
-      height: "100vh",
-      margin: "0 auto",
-    }}>
+    <div
+      style={{
+        width: "80%",
+        height: "100vh",
+        margin: "0 auto",
+      }}
+    >
       <R3FDomAlign items={items} />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
