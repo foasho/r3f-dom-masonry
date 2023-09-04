@@ -59,7 +59,7 @@ const items: Array<DomItemProps> = [
   },
 ];
 
-function App() {
+export const App = () => {
   return (
     <div
       style={{
@@ -72,5 +72,3 @@ function App() {
     </div>
   );
 }
-
-export default App;

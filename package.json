@@ -4,10 +4,19 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "prebuild": "rimraf dist && npm run typegen",
+    "prepublishOnly": "npm run build && npm version patch",
     "dev": "vite",
     "build": "tsc && vite build",
+    "prepare": "npm run build && husky install",
+    "eslint": "eslint --fix .",
+    "eslint:ci": "eslint .",
+    "prettier": "prettier --check .",
+    "prettier-fix": "prettier --write .",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false --strict --jsx react",
+    "typegen": "tsc --emitDeclarationOnly"
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",
