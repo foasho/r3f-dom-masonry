@@ -44,7 +44,7 @@
     "typegen": "tsc",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "storybook:build": "build-storybook -c .storybook -o ./static/storybook"
+    "storybook:build": "storybook build -c .storybook -o ./static/storybook"
   },
   "dependencies": {
     "@react-three/drei": "^9.80.1",

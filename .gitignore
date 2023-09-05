@@ -3,6 +3,7 @@ storybook-static
 build-storybook.log
 .env
 dist
+static
 
 /.pnp
 .pnp.js
