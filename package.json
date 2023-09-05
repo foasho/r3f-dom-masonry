@@ -1,12 +1,14 @@
 {
   "name": "r3f-dom-masonry",
   "private": false,
-    "author": "ShoOsaka",
+  "author": {
+    "name": "ShoOsaka"
+  },
   "license": "MIT",
   "description": "ReactThreeFiber + three-dom-alignment + Masonry",
   "repository": {
     "type": "git",
-    "url": "https://github.com/foasho/r3f-dom-masonry.git"
+    "url": "git+https://github.com/foasho/r3f-dom-masonry.git"
   },
   "version": "0.0.0",
   "type": "module",
@@ -51,6 +53,7 @@
     "@vitejs/plugin-react": "^4.0.3",
     "@vitejs/plugin-react-swc": "^3.3.2",
     "autoprefixer": "^10.4.15",
+    "chromatic": "^7.0.0",
     "eslint": "^8.45.0",
     "eslint-config-standard-with-typescript": "^39.0.0",
     "eslint-plugin-import": "^2.25.2",
@@ -65,5 +68,11 @@
     "typescript": "^5.0.2",
     "vite": "^4.4.5",
     "vite-plugin-glsl": "^1.1.2"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/foasho/r3f-dom-masonry/issues"
+  },
+  "readme": "ERROR: No README data found!",
+  "homepage": "https://github.com/foasho/r3f-dom-masonry#readme",
+  "_id": "r3f-dom-masonry@0.0.0"
 }
