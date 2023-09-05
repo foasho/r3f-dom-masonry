@@ -1,4 +1,12 @@
-import React, { useEffect, useMemo, useState, useRef, createContext, useContext } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  createContext,
+  useContext,
+  Suspense,
+} from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   Color,
@@ -16,6 +24,8 @@ import snoiseVert from "../glsl/snoise.vert";
 import imageFrag from "../glsl/image.frag";
 import imageVert from "../glsl/image.vert";
 import tunnel from "tunnel-rat";
+import { Loading } from "./Loading";
+import { Masonry } from "./Masonry";
 
 export const r3f = tunnel();
 
@@ -156,14 +166,16 @@ export type R3FDomAlignProps = {
   borderRadius?: number;
   borderColor?: string;
   borderWidth?: number;
-  items: Array<DomItemProps>;
+  items?: Array<DomItemProps>;
 };
 
-export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
-  const isBorderRadius = props.isBorderRadius ? props.isBorderRadius : true;
-  const borderRadius = props.borderRadius ? props.borderRadius : 5;
-  const borderWidth = props.borderWidth ? props.borderWidth : 2;
-  const borderColor = props.borderColor ? props.borderColor : "#1f2a33";
+export const R3FDomAlign = ({
+  isBorderRadius = true,
+  borderRadius = 5,
+  borderColor = "#1f2a33",
+  borderWidth = 2,
+  items = [],
+}: R3FDomAlignProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const offset = useRef<number>(0); // 0~1でスクロールの割合を保持
@@ -218,8 +230,6 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
       }
     };
   }, []);
-
-  const { items } = props;
 
   // itemsをグリッドに分割するロジック
   const chunkedItems: DomItemProps[][] = [];
@@ -286,7 +296,7 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
             top: 0,
             left: 0,
             width: "100%",
-            height: "100vh",
+            height: "100%",
             zIndex: 1,
             alignItems: "center",
           }}
@@ -304,7 +314,7 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
               WebkitOverflowScrolling: "touch",
             }}
           >
-            <div className={"r3fDomAlignGrid"}>
+            {/* <div className={"r3fDomAlignGrid"}>
               {chunkedItems.map((itemChunk, chunkIndex) => (
                 <div
                   key={chunkIndex}
@@ -320,7 +330,17 @@ export const R3FDomAlign = ({ ...props }: R3FDomAlignProps) => {
                   ))}
                 </div>
               ))}
-            </div>
+            </div> */}
+            <Masonry
+              items={items}
+              config={{
+                columns: [1, 2, 3],
+                gap: [24, 12, 6],
+                media: [640, 768, 1024],
+              }}
+              render={(item, index) => <DomItem key={index} {...item} />}
+            >
+            </Masonry>
           </div>
         </div>
       </div>
@@ -350,11 +370,7 @@ export type DomItemProps = {
   vertexShader?: string;
   fragmentShader?: string;
 };
-const DomItem = ({ 
-  height = 250,
-  element = <div></div>,
-  src = undefined,
- }: DomItemProps) => {
+const DomItem = ({ height = 250, element = <div></div>, src = undefined }: DomItemProps) => {
   const {
     isBorderRadius,
     borderRadius,
@@ -411,36 +427,40 @@ const DomItem = ({
     };
   }, [aspect, parentRect]);
 
+  let domStyle: React.CSSProperties = {
+    height: "100%",
+    padding: "0 0.5rem",
+    maxWidth: "100%",
+    position: "relative",
+  };
+  if (isBorderRadius) {
+    domStyle = {
+      ...domStyle,
+      borderRadius: `${borderRadius}px`,
+      borderWidth: `${borderWidth}px`,
+      borderColor: `${borderColor}`,
+      borderStyle: "solid",
+    };
+  }
+
   return (
-    <div ref={target} style={{ height: `${height}px` }}>
-      <div
-        style={{
-          height: "100%",
-          padding: "0 0.5rem",
-          maxWidth: "100%",
-          position: "relative",
-          borderColor: borderColor,
-          borderRadius: borderRadius,
-          borderWidth: borderWidth,
-          borderStyle: isBorderRadius ? "solid" : "none",
-          outlineOffset: `-${borderWidth}px`,
-        }}
-      >
-        {element}
+    <Suspense fallback={<Loading />}>
+      <div ref={target} style={{ height: `${height}px` }}>
+        <div style={domStyle}>{element}</div>
+        <r3f.In>
+          {ready && parentRect && (
+            <Object
+              planePosition={planePosition}
+              planeScale={planeScale}
+              target={target.current!}
+              scale={scale}
+              radius={borderRadius}
+              texture={src}
+              textureAspect={textureAspect}
+            />
+          )}
+        </r3f.In>
       </div>
-      <r3f.In>
-        {ready && parentRect && (
-          <Object
-            planePosition={planePosition}
-            planeScale={planeScale}
-            target={target.current!}
-            scale={scale}
-            radius={borderRadius}
-            texture={src}
-            textureAspect={textureAspect}
-          />
-        )}
-      </r3f.In>
-    </div>
+    </Suspense>
   );
 };

@@ -7,7 +7,6 @@ const meta: Meta<typeof R3FDomAlign> = {
   parameters: {
     layout: "centered",
   },
-  tags: ["autodocs"],
   argTypes: {
     borderColor: {
       control: {
@@ -19,13 +18,11 @@ const meta: Meta<typeof R3FDomAlign> = {
     (Story) => (
       <div
         style={{
-          width: "80%",
-          margin: "0 auto",
-          minWidth: "520px",
-          height: "100vh",
+          height: "90vh",
+          width: "90vw",
         }}
       >
-        <Story />
+          <Story />
       </div>
     ),
   ],
@@ -38,47 +35,39 @@ const defaultProps: R3FDomAlignProps = {
   items: [
     {
       height: 250,
-      element: <div>Sample</div>,
-    },
-    {
-      height: 210,
-      element: <div>Sample</div>,
+      element: <div>Dom1</div>,
     },
     {
       height: 250,
-      element: <div>Sample</div>,
+      element: <div>Dom2</div>,
     },
     {
       height: 250,
-      element: <div>Sample</div>,
+      element: <div>Dom3</div>,
     },
     {
       height: 250,
-      element: <div>Sample</div>,
+      element: <div>Dom4</div>,
     },
     {
       height: 250,
-      element: <div>Sample</div>,
+      element: <div>Dom5</div>,
     },
     {
       height: 250,
-      element: <div>Sample</div>,
+      element: <div>Dom6</div>,
     },
     {
       height: 250,
-      element: <div>Sample</div>,
+      element: <div>Dom7</div>,
     },
     {
       height: 250,
-      element: <div>Sample</div>,
+      element: <div>Dom8</div>,
     },
     {
       height: 250,
-      element: <div>Sample</div>,
-    },
-    {
-      height: 250,
-      element: <div>Sample</div>,
+      element: <div>Dom9</div>,
     },
   ],
   borderColor: "#1f2a33",
@@ -88,7 +77,10 @@ const defaultProps: R3FDomAlignProps = {
 
 const Template: StoryFn<typeof R3FDomAlign> = (args: R3FDomAlignProps) => <R3FDomAlign {...args} />;
 
-export const SimpleDoms: Story = {
+/**
+ * Simple Plane Geometry && Dom Alignment
+ */
+export const Simple: Story = {
   render: Template,
   args: {
     ...defaultProps,

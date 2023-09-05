@@ -3,48 +3,39 @@ import { R3FDomAlign, DomItemProps } from "./components/R3FDomAlign";
 const items: Array<DomItemProps> = [
   {
     height: 250,
-    element: <div>Sample</div>,
-    src: "https://picsum.photos/200/300",
-  },
-  {
-    height: 210,
-    element: <div>Sample</div>,
+    element: <div>Dom1</div>,
   },
   {
     height: 250,
-    element: <div>Sample</div>,
+    element: <div>Dom2</div>,
   },
   {
     height: 250,
-    element: <div>Sample</div>,
+    element: <div>Dom3</div>,
   },
   {
     height: 250,
-    element: <div>Sample</div>,
+    element: <div>Dom4</div>,
   },
   {
     height: 250,
-    element: <div>Sample</div>,
+    element: <div>Dom5</div>,
   },
   {
     height: 250,
-    element: <div>Sample</div>,
+    element: <div>Dom6</div>,
   },
   {
     height: 250,
-    element: <div>Sample</div>,
+    element: <div>Dom7</div>,
   },
   {
     height: 250,
-    element: <div>Sample</div>,
+    element: <div>Dom8</div>,
   },
   {
     height: 250,
-    element: <div>Sample</div>,
-  },
-  {
-    height: 250,
-    element: <div>Sample</div>,
+    element: <div>Dom9</div>,
   },
 ];
 
