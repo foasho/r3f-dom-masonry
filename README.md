@@ -28,3 +28,45 @@ yarn add r3f-dom-masonry
 # or
 pnpm install r3f-dom-masonry
 ```
+
+### Easy Usage
+
+```ts
+import { R3FDomMasonry } from 'r3f-dom-masonry';
+
+const items = [
+   {
+      element: <div>Dom1</div>,
+   },
+   {
+      element: <div>Dom2</div>,
+   },
+   {
+      element: <div>Dom3</div>,
+   },
+   {
+      element: <div>Dom4</div>,
+   },
+   {
+      element: <div>Dom5</div>,
+   },
+   {
+      element: <div>Dom6</div>,
+   },
+   {
+      element: <div>Dom7</div>,
+   },
+   {
+      element: <div>Dom8</div>,
+   },
+   {
+      element: <div>Dom9</div>,
+   }
+];
+
+function App() {
+   return (
+      <R3FDomMasonry items={items} />
+   );
+}
+```
