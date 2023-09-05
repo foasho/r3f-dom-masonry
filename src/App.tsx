@@ -1,10 +1,10 @@
-import { R3FDomAlign, R3FDomAlignProps } from "./components/R3FDomAlign";
+import { R3FDomMasonry, R3FDomMasonryProps } from "./components/R3FDomMasonry";
 
 const getRandomHeight = () => {
   return Math.floor(Math.random() * 320) + 50;
-}
+};
 
-const props: R3FDomAlignProps = {
+const props: R3FDomMasonryProps = {
   items: [
     {
       height: getRandomHeight(),
@@ -94,10 +94,10 @@ export const App = () => {
       style={{
         width: "80%",
         height: "100vh",
-        margin: "0 auto"
+        margin: "0 auto",
       }}
     >
-      <R3FDomAlign {...props} />
+      <R3FDomMasonry {...props} />
     </div>
   );
 };

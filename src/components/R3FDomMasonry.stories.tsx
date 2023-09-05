@@ -1,9 +1,9 @@
 import type { Meta, StoryFn, StoryObj } from "@storybook/react";
-import { R3FDomAlign, R3FDomAlignProps } from "./R3FDomAlign";
+import { R3FDomMasonry, R3FDomMasonryProps } from "./R3FDomMasonry";
 
-const meta: Meta<typeof R3FDomAlign> = {
-  title: "R3FDomAlign",
-  component: R3FDomAlign,
+const meta: Meta<typeof R3FDomMasonry> = {
+  title: "R3FDomMasonry",
+  component: R3FDomMasonry,
   parameters: {
     layout: "centered",
   },
@@ -26,12 +26,12 @@ const meta: Meta<typeof R3FDomAlign> = {
       </div>
     ),
   ],
-} satisfies Meta<typeof R3FDomAlign>;
+} satisfies Meta<typeof R3FDomMasonry>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const defaultProps: R3FDomAlignProps = {
+const defaultProps: R3FDomMasonryProps = {
   items: [
     {
       element: <div>Dom1</div>,
@@ -96,8 +96,62 @@ const defaultProps: R3FDomAlignProps = {
   borderRadius: 20,
 };
 
-const imageItemProps: R3FDomAlignProps = {
+const imageItemProps: R3FDomMasonryProps = {
   items: [
+    {
+      src: "https://picsum.photos/200/300",
+    },
+    {
+      src: "https://picsum.photos/300/300",
+    },
+    {
+      src: "https://picsum.photos/300/200",
+    },
+    {
+      src: "https://picsum.photos/500/300",
+    },
+    {
+      src: "https://picsum.photos/400/300",
+    },
+    {
+      src: "https://picsum.photos/200/300",
+    },
+    {
+      src: "https://picsum.photos/200/300",
+    },
+    {
+      src: "https://picsum.photos/300/300",
+    },
+    {
+      src: "https://picsum.photos/300/200",
+    },
+    {
+      src: "https://picsum.photos/500/300",
+    },
+    {
+      src: "https://picsum.photos/400/300",
+    },
+    {
+      src: "https://picsum.photos/200/300",
+    },
+    {
+      src: "https://picsum.photos/200/300",
+    },
+    {
+      src: "https://picsum.photos/300/300",
+    },
+    {
+      src: "https://picsum.photos/300/200",
+    },
+    {
+      src: "https://picsum.photos/500/300",
+    },
+    {
+      src: "https://picsum.photos/400/300",
+    },
+    {
+      src: "https://picsum.photos/200/300",
+    },
     {
       src: "https://picsum.photos/200/300",
     },
@@ -119,10 +173,12 @@ const imageItemProps: R3FDomAlignProps = {
   ],
 };
 
-const Template: StoryFn<typeof R3FDomAlign> = (args: R3FDomAlignProps) => <R3FDomAlign {...args} />;
+const Template: StoryFn<typeof R3FDomMasonry> = (args: R3FDomMasonryProps) => (
+  <R3FDomMasonry {...args} />
+);
 
-const RandomHeightsTemplate: StoryFn<typeof R3FDomAlign> = (args: R3FDomAlignProps) => {
-  const items = args.items!.map((item) =>{
+const RandomHeightsTemplate: StoryFn<typeof R3FDomMasonry> = (args: R3FDomMasonryProps) => {
+  const items = args.items!.map((item) => {
     let randomHeight = Math.random() * 520;
     if (randomHeight < 240) {
       randomHeight = 240;
@@ -130,13 +186,14 @@ const RandomHeightsTemplate: StoryFn<typeof R3FDomAlign> = (args: R3FDomAlignPro
     return {
       ...item,
       height: randomHeight,
-    }
+    };
   });
-  return <R3FDomAlign {...args} items={items} />;
+  return <R3FDomMasonry {...args} items={items} />;
 };
 
-const ImageTemplate: StoryFn<typeof R3FDomAlign> = (args: R3FDomAlignProps) => <R3FDomAlign {...args} />;
-
+const ImageTemplate: StoryFn<typeof R3FDomMasonry> = (args: R3FDomMasonryProps) => (
+  <R3FDomMasonry {...args} />
+);
 
 /**
  * Plane Geometry && Dom Alignment

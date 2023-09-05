@@ -54,7 +54,7 @@ const Object = ({
   textureAspect = 1,
 }: ObjectProps) => {
   const [tex, setTex] = useState<Texture | null>(null);
-  const { offsetPx } = useContext(R3FDomAlignContext);
+  const { offsetPx } = useContext(R3FDomMasonryContext);
   const ref = useRef<Mesh>(null);
   const shaderMaterial = useMemo(() => {
     const colorIndex = [0, 1, 2, 3, 4];
@@ -133,7 +133,7 @@ const Object = ({
   );
 };
 
-const R3FDomAlignContext = createContext<{
+const R3FDomMasonryContext = createContext<{
   isBorderRadius: boolean;
   borderRadius: number;
   borderColor: string;
@@ -161,7 +161,7 @@ const R3FDomAlignContext = createContext<{
   offsetPx: { current: 0 },
 });
 
-export type R3FDomAlignProps = {
+export type R3FDomMasonryProps = {
   isBorderRadius?: boolean;
   borderRadius?: number;
   borderColor?: string;
@@ -173,7 +173,7 @@ export type R3FDomAlignProps = {
   hideScrollBar?: boolean;
 };
 
-export const R3FDomAlign = ({
+export const R3FDomMasonry = ({
   isBorderRadius = true,
   borderRadius = 5,
   borderColor = "#1f2a33",
@@ -183,7 +183,7 @@ export const R3FDomAlign = ({
   gap = [18, 12, 6],
   media = [640, 768, 1024],
   hideScrollBar = true,
-}: R3FDomAlignProps) => {
+}: R3FDomMasonryProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const offset = useRef<number>(0); // 0~1でスクロールの割合を保持
@@ -235,7 +235,7 @@ export const R3FDomAlign = ({
     let styleSheet: HTMLStyleElement | null = null;
     if (hideScrollBar) {
       styleSheet = document.createElement("style");
-      styleSheet.innerText = "#R3FDomAlignScroll::-webkit-scrollbar { display: none; }";
+      styleSheet.innerText = "#R3FDomMasonryScroll::-webkit-scrollbar { display: none; }";
       document.head.appendChild(styleSheet);
     }
     const commonStyle = document.createElement("style");
@@ -275,7 +275,7 @@ export const R3FDomAlign = ({
   });
 
   return (
-    <R3FDomAlignContext.Provider
+    <R3FDomMasonryContext.Provider
       value={{
         isBorderRadius: isBorderRadius,
         borderRadius: borderRadius,
@@ -294,7 +294,7 @@ export const R3FDomAlign = ({
       <div
         style={{
           width: "100%",
-          height: "100%"
+          height: "100%",
         }}
       >
         <div
@@ -340,7 +340,7 @@ export const R3FDomAlign = ({
           >
             <div
               ref={scrollRef}
-              id="R3FDomAlignScroll"
+              id="R3FDomMasonryScroll"
               style={{
                 overflowY: "auto",
                 overflowX: "hidden",
@@ -364,7 +364,7 @@ export const R3FDomAlign = ({
           </div>
         </div>
       </div>
-    </R3FDomAlignContext.Provider>
+    </R3FDomMasonryContext.Provider>
   );
 };
 
@@ -373,7 +373,7 @@ export const R3FDomAlign = ({
  */
 const CanvasSystem = () => {
   const { camera } = useThree();
-  const { aspect } = useContext(R3FDomAlignContext);
+  const { aspect } = useContext(R3FDomMasonryContext);
 
   useEffect(() => {
     (camera as PerspectiveCamera).aspect = aspect;
@@ -400,7 +400,7 @@ const DomItem = ({ height = 250, element = <div></div>, src = undefined }: DomIt
     scale,
     rect: parentRect,
     offsetPx,
-  } = useContext(R3FDomAlignContext);
+  } = useContext(R3FDomMasonryContext);
   const [ready, setReady] = useState<boolean>(false);
   const planeScale = useRef<Vector3>(new Vector3(1, 1, 1));
   const planePosition = useRef<Vector3>(new Vector3(0, 0, 0));
@@ -421,6 +421,7 @@ const DomItem = ({ height = 250, element = <div></div>, src = undefined }: DomIt
     const newPlanePositionX = (rect.left - parentRect.left + rect.width * 0.5 - w * 0.5) * s;
     let newPlanePositionY = (-rect.top + parentRect.top - rect.height * 0.5 + h * 0.5) * s;
     planePosition.current = new Vector3(newPlanePositionX, newPlanePositionY, 0);
+    // scrollOffsetを考慮して、planeの位置を更新
     if (offsetPx.current > 1) {
       planePosition.current.sub(new Vector3(0, offsetPx.current * scale.current, 0));
     }
