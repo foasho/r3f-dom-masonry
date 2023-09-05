@@ -15,7 +15,7 @@
     "url": "git+https://github.com/foasho/r3f-dom-masonry.git"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=16"
   },
   "type": "module",
   "main": "./dist/index.umd.cjs",
