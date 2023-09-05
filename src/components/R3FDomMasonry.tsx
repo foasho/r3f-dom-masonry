@@ -26,7 +26,6 @@ import snoiseVert from "../glsl/snoise.vert";
 import imageFrag from "../glsl/image.frag";
 import imageVert from "../glsl/image.vert";
 import tunnel from "tunnel-rat";
-import { Loading } from "./Loading";
 import { Masonry } from "./Masonry";
 
 export const r3f = tunnel();
@@ -524,7 +523,7 @@ const DomItem = ({ height = 250, element = <div></div>, src = undefined }: DomIt
   }
 
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback={null}>
       <div ref={target} style={{ height: `${height}px` }}>
         <div style={domStyle}>{element}</div>
         <r3f.In>
