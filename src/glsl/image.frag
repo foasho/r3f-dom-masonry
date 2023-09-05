@@ -3,28 +3,38 @@ uniform vec2 uResolution;
 uniform float uImageAspect;
 uniform float uPlaneAspect;
 uniform float uBorderRadius;
-uniform sampler2D uTexture;
+uniform float uProgress;
+uniform sampler2D uImage;
+uniform sampler2D uDisplacement;
 varying vec2 vUv;
 
 void main(){
+  float progress = uProgress;
+  vec4 displace = texture2D(uDisplacement, vUv.yx);
+  
+  vec2 displacedUV = vec2(
+    vUv.x,
+    vUv.y
+  );
+  
+  displacedUV.y = mix(vUv.y, displace.r - .2, uProgress);
+  
   // 画像のアスペクトとプレーンオブジェクトのアスペクトを比較し、短い方に合わせる
   vec2 ratio=vec2(
     min(uPlaneAspect/uImageAspect,1.),
     min((1./uPlaneAspect)/(1./uImageAspect),1.)
   );
-  // vec2 ratio = uResolution.xy / min(uResolution.x, uResolution.y);
-  
+
   // 計算結果を用いてテクスチャを中央に配置
   vec2 fixedUv=vec2(
     (vUv.x-.5)*ratio.x+.5,
     (vUv.y-.5)*ratio.y+.5
   );
   
-  vec2 os=vec2(0.,uTime*.0005);
-  float r=texture2D(uTexture,fixedUv+os).r;
-  float g=texture2D(uTexture,fixedUv+os*.5).g;
-  float b=texture2D(uTexture,fixedUv).b;
-  vec3 texture=vec3(r,g,b);
+  vec4 color = texture2D(uImage, displacedUV);
+  color.r = texture2D(uImage, displacedUV+vec2(0,.005)*progress).r;
+  color.g = texture2D(uImage, displacedUV+vec2(0,.01)*progress).g;
+  color.b = texture2D(uImage, displacedUV+vec2(0,.02)*progress).b;
   
   // 上下左右のSquare
   vec2 aspect=uResolution/max(uResolution.x,uResolution.y);
@@ -43,5 +53,5 @@ void main(){
   // 2つを足し合わせる
   alpha=min(1.,alpha+roundAlpha);
   
-  gl_FragColor=vec4(texture,alpha);
+  gl_FragColor=vec4(color.rgb, alpha);
 }

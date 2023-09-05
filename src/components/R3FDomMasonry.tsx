@@ -17,6 +17,8 @@ import {
   PerspectiveCamera,
   Texture,
   TextureLoader,
+  MathUtils,
+  ShaderMaterialParameters,
 } from "three";
 import { Scene } from "./Scene";
 import snoiseFrag from "../glsl/snoise.frag";
@@ -42,7 +44,10 @@ type ObjectProps = {
   scale?: React.MutableRefObject<number>;
   radius?: number;
   texture?: string;
+  displaceTex?: string;
   textureAspect?: number;
+  vertexShader?: string;
+  fragmentShader?: string;
 };
 const Object = ({
   target,
@@ -51,11 +56,16 @@ const Object = ({
   scale = useRef<number>(1),
   radius = 20,
   texture = undefined,
+  displaceTex = "/displacement.png",
   textureAspect = 1,
+  vertexShader = undefined,
+  fragmentShader = undefined,
 }: ObjectProps) => {
-  const [tex, setTex] = useState<Texture | null>(null);
-  const { offsetPx } = useContext(R3FDomMasonryContext);
+  const [image, setImage] = useState<Texture | null>(null);
+  const [displacement, setDisplacement] = useState<Texture | null>(null);
+  const { offsetPx, scrollRef } = useContext(R3FDomMasonryContext);
   const ref = useRef<Mesh>(null);
+  const curScrollTop = useRef<number>(0);
   const shaderMaterial = useMemo(() => {
     const colorIndex = [0, 1, 2, 3, 4];
     // ランダムで色を２つ取得
@@ -66,36 +76,70 @@ const Object = ({
       uTime: { value: Math.random() * 10 },
       uResolution: { value: new Vector2() },
       uBorderRadius: { value: radius },
-      uTexture: { value: tex },
     };
 
-    if (!tex) {
+    if (!image) {
       uniforms.uColor1 = { value: new Color(colors[colorIndex1]) };
       uniforms.uColor2 = { value: new Color(colors[colorIndex2]) };
       uniforms.uNoiseScale = { value: Math.random() };
     } else {
-      uniforms.uTexture = { value: tex };
+      uniforms.uImage = { value: image };
+      uniforms.uDisplacement = { value: image };
       uniforms.uImageAspect = { value: textureAspect };
       uniforms.uPlaneAspect = { value: 1.0 };
+      uniforms.uProgress = { value: 0.0 };
+    }
+    if (displacement) {
+      uniforms.uDisplacement = { value: displacement };
     }
 
-    return new ShaderMaterial({
+    const shaderMaterial: ShaderMaterialParameters = {
       uniforms: uniforms,
-      vertexShader: tex ? imageVert : snoiseVert,
-      fragmentShader: tex ? imageFrag : snoiseFrag,
       transparent: true,
-    });
-  }, [tex]);
+    }
+    if (vertexShader) {
+      shaderMaterial.vertexShader = vertexShader;
+    }
+    else {
+      shaderMaterial.vertexShader = image? imageVert : snoiseVert;
+    }
+    if (fragmentShader) {
+      shaderMaterial.fragmentShader = fragmentShader;
+    }
+    else {
+      shaderMaterial.fragmentShader = image? imageFrag : snoiseFrag;
+    }
+
+    return new ShaderMaterial(shaderMaterial);
+  }, [image, displacement]);
 
   useEffect(() => {
     if (texture) {
       new TextureLoader().load(texture, (tex) => {
-        setTex(tex);
+        setImage(tex);
       });
     }
-  }, [texture]);
+    if (displaceTex) {
+      new TextureLoader().load(displaceTex, (tex) => {
+        setDisplacement(tex);
+      });
+    }
+  }, [texture, displaceTex]);
 
   useFrame((_, delta) => {
+    // ScrollRefとcurScrollTopから、0~1のforceとして取得する
+    let force = 0;
+    if (scrollRef.current && image) {
+      // forceをlerpでゆっくり変化させる
+      force = MathUtils.lerp(0, scrollRef.current.scrollTop - curScrollTop.current, 0.1);
+      // 0~1に 0~10の間で正規化する
+      const uProgress = Math.min(Math.abs(force), 10) / 10;
+      // uniformsに設定する
+      shaderMaterial.uniforms.uProgress.value = uProgress;
+      // 最新のscrollTopを更新
+      curScrollTop.current = scrollRef.current.scrollTop;
+    }
+
     if (ref.current && planePosition.current && planeScale.current) {
       // scrollOffsetを考慮して、planeの位置を更新
       const newPosition = planePosition.current.clone();
@@ -112,7 +156,7 @@ const Object = ({
         rect.width * scale.current,
         rect.height * scale.current
       );
-      if (tex) {
+      if (image) {
         shaderMaterial.uniforms.uPlaneAspect.value = rect.width / rect.height;
       }
     }
@@ -120,7 +164,7 @@ const Object = ({
     if (target) {
       target.style.borderRadius = `${radius}px`;
     }
-    if (!tex) {
+    if (!image) {
       shaderMaterial.uniforms.uBorderRadius.value = radius * scale.current;
     }
   });
@@ -138,6 +182,7 @@ const R3FDomMasonryContext = createContext<{
   borderRadius: number;
   borderColor: string;
   borderWidth: number;
+  centerDom: boolean;
   scale: React.MutableRefObject<number>;
   fov: number;
   aspect: number;
@@ -146,11 +191,13 @@ const R3FDomMasonryContext = createContext<{
   setCameraPosition: (position: Vector3) => void;
   offset: React.MutableRefObject<number>;
   offsetPx: React.MutableRefObject<number>;
+  scrollRef: React.MutableRefObject<HTMLDivElement | null>;
 }>({
   isBorderRadius: true,
   borderRadius: 5,
   borderColor: "#1f2a33",
   borderWidth: 2,
+  centerDom: true,
   scale: { current: 1 },
   fov: 52,
   aspect: 1,
@@ -159,6 +206,7 @@ const R3FDomMasonryContext = createContext<{
   setCameraPosition: () => {},
   offset: { current: 0 },
   offsetPx: { current: 0 },
+  scrollRef: { current: null },
 });
 
 export type R3FDomMasonryProps = {
@@ -171,6 +219,7 @@ export type R3FDomMasonryProps = {
   gap?: [number, number, number]; // sm, md, lg
   media?: [number, number, number]; // sm, md, lg
   hideScrollBar?: boolean;
+  centerDom?: boolean;
 };
 
 export const R3FDomMasonry = ({
@@ -183,6 +232,7 @@ export const R3FDomMasonry = ({
   gap = [18, 12, 6],
   media = [640, 768, 1024],
   hideScrollBar = true,
+  centerDom = true,
 }: R3FDomMasonryProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -281,6 +331,7 @@ export const R3FDomMasonry = ({
         borderRadius: borderRadius,
         borderWidth: borderWidth,
         borderColor: borderColor,
+        centerDom: centerDom,
         scale: scale,
         fov: fov,
         aspect: aspect,
@@ -289,6 +340,7 @@ export const R3FDomMasonry = ({
         setCameraPosition: setCameraPosition,
         offset: offset,
         offsetPx: offsetPx,
+        scrollRef: scrollRef,
       }}
     >
       <div
@@ -396,6 +448,7 @@ const DomItem = ({ height = 250, element = <div></div>, src = undefined }: DomIt
     borderRadius,
     borderWidth,
     borderColor,
+    centerDom,
     aspect,
     scale,
     rect: parentRect,
@@ -462,6 +515,12 @@ const DomItem = ({ height = 250, element = <div></div>, src = undefined }: DomIt
       borderColor: `${borderColor}`,
       borderStyle: "solid",
     };
+    // 中央配置にする
+    if (centerDom) {
+      domStyle.display = "flex";
+      domStyle.justifyContent = "center";
+      domStyle.alignItems = "center";
+    }
   }
 
   return (
