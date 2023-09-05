@@ -4,8 +4,7 @@ import React, {
   useState,
   useRef,
   createContext,
-  useContext,
-  Suspense,
+  useContext
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
@@ -127,11 +126,12 @@ const Object = ({
     // パフォーマンスのため、targetのtopがparentRectのHeightを超えたら、描画しない
     if (target && parentRect && ref.current) {
       const rect = target.getBoundingClientRect();
-      if (rect.top > parentRect.height) {
+      if (rect.top > parentRect.height * 1.5 && ref.current.visible) {
         ref.current.visible = false;
         return;
+      } else if (!ref.current.visible) {
+        ref.current.visible = true;
       }
-      ref.current.visible = true;
     }
     // ScrollRefとcurScrollTopから、0~1のforceとして取得する
     let force = 0;
