@@ -1,43 +1,92 @@
-import { R3FDomAlign, DomItemProps } from "./components/R3FDomAlign";
+import { R3FDomAlign, R3FDomAlignProps } from "./components/R3FDomAlign";
 
-const items: Array<DomItemProps> = [
-  {
-    height: 250,
-    element: <div>Dom1</div>,
-  },
-  {
-    height: 250,
-    element: <div>Dom2</div>,
-  },
-  {
-    height: 250,
-    element: <div>Dom3</div>,
-  },
-  {
-    height: 250,
-    element: <div>Dom4</div>,
-  },
-  {
-    height: 250,
-    element: <div>Dom5</div>,
-  },
-  {
-    height: 250,
-    element: <div>Dom6</div>,
-  },
-  {
-    height: 250,
-    element: <div>Dom7</div>,
-  },
-  {
-    height: 250,
-    element: <div>Dom8</div>,
-  },
-  {
-    height: 250,
-    element: <div>Dom9</div>,
-  },
-];
+const getRandomHeight = () => {
+  return Math.floor(Math.random() * 320) + 50;
+}
+
+const props: R3FDomAlignProps = {
+  items: [
+    {
+      height: getRandomHeight(),
+      element: <div>Dom1</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom2</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom3</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom4</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom5</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom6</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom7</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom8</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom9</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom10</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom11</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom12</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom13</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom14</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom15</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom16</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom17</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom18</div>,
+    },
+    {
+      height: getRandomHeight(),
+      element: <div>Dom19</div>,
+    },
+  ],
+  borderColor: "#1f2a33",
+  borderWidth: 2,
+  borderRadius: 20,
+};
 
 export const App = () => {
   return (
@@ -45,10 +94,10 @@ export const App = () => {
       style={{
         width: "80%",
         height: "100vh",
-        margin: "0 auto",
+        margin: "0 auto"
       }}
     >
-      <R3FDomAlign items={items} />
+      <R3FDomAlign {...props} />
     </div>
   );
 };

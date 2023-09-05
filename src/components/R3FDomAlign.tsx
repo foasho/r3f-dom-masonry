@@ -180,7 +180,7 @@ export const R3FDomAlign = ({
   borderWidth = 2,
   items = [],
   columns = [1, 2, 3],
-  gap = [24, 12, 6],
+  gap = [18, 12, 6],
   media = [640, 768, 1024],
   hideScrollBar = true,
 }: R3FDomAlignProps) => {
@@ -292,68 +292,75 @@ export const R3FDomAlign = ({
       }}
     >
       <div
-        ref={ref}
         style={{
           width: "100%",
-          height: "100%",
-          position: "relative",
+          height: "100%"
         }}
       >
-        {/** Canvas */}
-        <Canvas
-          shadows
-          gl={{
-            antialias: true,
-            alpha: true,
-          }}
-          camera={{
-            fov: fov,
-            aspect: aspect,
-            near: 0.01,
-            far: 10000,
-            position: cameraPosition,
-          }}
-        >
-          <Scene>
-            <CanvasSystem />
-            <r3f.Out />
-          </Scene>
-        </Canvas>
-
-        {/** Dom */}
         <div
+          ref={ref}
           style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
             width: "100%",
             height: "100%",
-            zIndex: 1,
-            alignItems: "center",
+            position: "relative",
           }}
         >
-          <div
-            ref={scrollRef}
-            id="R3FDomAlignScroll"
-            style={{
-              overflowY: "auto",
-              overflowX: "hidden",
-              height: "100%",
-              width: "100%",
-              msOverflowStyle: "none" /* IE, Edge 対応 */,
-              scrollbarWidth: "none" /* Firefox 対応 */,
-              WebkitOverflowScrolling: "touch",
+          {/** Canvas */}
+          <Canvas
+            shadows
+            gl={{
+              antialias: true,
+              alpha: true,
+            }}
+            camera={{
+              fov: fov,
+              aspect: aspect,
+              near: 0.01,
+              far: 10000,
+              position: cameraPosition,
             }}
           >
-            <Masonry
-              items={items}
-              config={{
-                columns: columns,
-                gap: gap,
-                media: media,
+            <Scene>
+              <CanvasSystem />
+              <r3f.Out />
+            </Scene>
+          </Canvas>
+
+          {/** Dom */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              zIndex: 1,
+              alignItems: "center",
+            }}
+          >
+            <div
+              ref={scrollRef}
+              id="R3FDomAlignScroll"
+              style={{
+                overflowY: "auto",
+                overflowX: "hidden",
+                height: "100%",
+                width: "100%",
+                msOverflowStyle: "none" /* IE, Edge 対応 */,
+                scrollbarWidth: "none" /* Firefox 対応 */,
+                WebkitOverflowScrolling: "touch",
               }}
-              render={(item, index) => <DomItem key={index} {...item} />}
-            ></Masonry>
+            >
+              <Masonry
+                items={items}
+                config={{
+                  columns: columns,
+                  gap: gap,
+                  media: media,
+                }}
+                render={(item, index) => <DomItem key={index} {...item} />}
+              ></Masonry>
+            </div>
           </div>
         </div>
       </div>
