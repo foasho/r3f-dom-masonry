@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/foasho/r3f-dom-masonry.git"
   },
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "prebuild": "rimraf dist && npm run typegen",
@@ -73,6 +73,5 @@
     "url": "https://github.com/foasho/r3f-dom-masonry/issues"
   },
   "readme": "ERROR: No README data found!",
-  "homepage": "https://github.com/foasho/r3f-dom-masonry#readme",
-  "_id": "r3f-dom-masonry@0.0.0"
+  "homepage": "https://github.com/foasho/r3f-dom-masonry#readme"
 }
