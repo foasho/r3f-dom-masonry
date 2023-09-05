@@ -62,7 +62,7 @@ const Object = ({
 }: ObjectProps) => {
   const [image, setImage] = useState<Texture | null>(null);
   const [displacement, setDisplacement] = useState<Texture | null>(null);
-  const { offsetPx, scrollRef } = useContext(R3FDomMasonryContext);
+  const { offsetPx, scrollRef, rect: parentRect } = useContext(R3FDomMasonryContext);
   const ref = useRef<Mesh>(null);
   const curScrollTop = useRef<number>(0);
   const shaderMaterial = useMemo(() => {
@@ -95,18 +95,16 @@ const Object = ({
     const shaderMaterial: ShaderMaterialParameters = {
       uniforms: uniforms,
       transparent: true,
-    }
+    };
     if (vertexShader) {
       shaderMaterial.vertexShader = vertexShader;
-    }
-    else {
-      shaderMaterial.vertexShader = image? imageVert : snoiseVert;
+    } else {
+      shaderMaterial.vertexShader = image ? imageVert : snoiseVert;
     }
     if (fragmentShader) {
       shaderMaterial.fragmentShader = fragmentShader;
-    }
-    else {
-      shaderMaterial.fragmentShader = image? imageFrag : snoiseFrag;
+    } else {
+      shaderMaterial.fragmentShader = image ? imageFrag : snoiseFrag;
     }
 
     return new ShaderMaterial(shaderMaterial);
@@ -126,6 +124,15 @@ const Object = ({
   }, [texture, displaceTex]);
 
   useFrame((_, delta) => {
+    // パフォーマンスのため、targetのtopがparentRectのHeightを超えたら、描画しない
+    if (target && parentRect && ref.current) {
+      const rect = target.getBoundingClientRect();
+      if (rect.top > parentRect.height) {
+        ref.current.visible = false;
+        return;
+      }
+      ref.current.visible = true;
+    }
     // ScrollRefとcurScrollTopから、0~1のforceとして取得する
     let force = 0;
     if (scrollRef.current && image) {
@@ -523,23 +530,22 @@ const DomItem = ({ height = 250, element = <div></div>, src = undefined }: DomIt
   }
 
   return (
-    <Suspense fallback={null}>
-      <div ref={target} style={{ height: `${height}px` }}>
-        <div style={domStyle}>{element}</div>
-        <r3f.In>
-          {ready && parentRect && (
-            <Object
-              planePosition={planePosition}
-              planeScale={planeScale}
-              target={target.current!}
-              scale={scale}
-              radius={borderRadius}
-              texture={src}
-              textureAspect={textureAspect}
-            />
-          )}
-        </r3f.In>
-      </div>
-    </Suspense>
+    <div ref={target} style={{ height: `${height}px` }}>
+      {!ready && <div style={domStyle}>Loading...</div>}
+      {ready && <div style={domStyle}>{element}</div>}
+      <r3f.In>
+        {ready && parentRect && (
+          <Object
+            planePosition={planePosition}
+            planeScale={planeScale}
+            target={target.current!}
+            scale={scale}
+            radius={borderRadius}
+            texture={src}
+            textureAspect={textureAspect}
+          />
+        )}
+      </r3f.In>
+    </div>
   );
 };

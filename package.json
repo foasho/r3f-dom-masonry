@@ -43,8 +43,7 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false --strict --jsx react",
     "typegen": "tsc",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build",
-    "storybook:build": "storybook build -c .storybook -o ./static/storybook"
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@react-three/drei": "^9.80.1",

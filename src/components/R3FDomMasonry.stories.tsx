@@ -211,6 +211,23 @@ const ImageRandomHeightsTemplate: StoryFn<typeof R3FDomMasonry> = (
   return <R3FDomMasonry {...args} items={items} isBorderRadius={false} />;
 }
 
+const ImageDomRandomHeightsTemplate: StoryFn<typeof R3FDomMasonry> = (
+  args: R3FDomMasonryProps
+) => {
+  const items = args.items!.map((item, idx) => {
+    let randomHeight = Math.random() * 520;
+    if (randomHeight < 240) {
+      randomHeight = 240;
+    }
+    return {
+      ...item,
+      height: randomHeight,
+      element: <div>{`DOM${idx+1}`}</div>
+    };
+  });
+  return <R3FDomMasonry {...args} items={items} />;
+}
+
 /**
  * Plane Geometry && Dom Alignment
  */
@@ -246,6 +263,16 @@ export const Image: Story = {
  */
 export const ImageRandomHeights: Story = {
   render: ImageRandomHeightsTemplate,
+  args: {
+    ...imageItemProps,
+  },
+};
+
+/**
+ * Image and Dom Random Heights
+ */
+export const ImageDomRandomHeights: Story = {
+  render: ImageDomRandomHeightsTemplate,
   args: {
     ...imageItemProps,
   },
