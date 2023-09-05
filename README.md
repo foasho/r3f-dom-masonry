@@ -20,6 +20,9 @@
 ## 起動方法(Usage)
 
 ```
-pnpm install
-pnpm run dev
+npm install r3f-dom-masonry
+# or
+yarn add r3f-dom-masonry
+# or
+pnpm install r3f-dom-masonry
 ```

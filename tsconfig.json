@@ -11,18 +11,20 @@
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationDir": "./types",
     "jsx": "react-jsx",
     /* GLSL */
-    "types": [
-      "vite-plugin-glsl/ext"
-    ],
+    "types": ["vite-plugin-glsl/ext"],
 
     /* Linting */
     "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noImplicitReturns": true
   },
   "include": ["src"],
   "exclude": ["node_modules"]

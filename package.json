@@ -1,6 +1,10 @@
 {
   "name": "r3f-dom-masonry",
+  "version": "0.0.1",
   "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "author": {
     "name": "ShoOsaka"
   },
@@ -10,13 +14,26 @@
     "type": "git",
     "url": "git+https://github.com/foasho/r3f-dom-masonry.git"
   },
-  "version": "0.0.1",
+  "engines": {
+    "node": ">=18"
+  },
   "type": "module",
+  "main": "./dist/index.umd.cjs",
+  "module": "./dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "react",
+    "components",
+    "webgl"
+  ],
   "scripts": {
     "prebuild": "rimraf dist && npm run typegen",
     "prepublishOnly": "npm run build && npm version patch",
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build && tsc",
     "eslint": "eslint --fix .",
     "eslint:ci": "eslint .",
     "prettier": "prettier --check .",
@@ -73,5 +90,11 @@
     "url": "https://github.com/foasho/r3f-dom-masonry/issues"
   },
   "readme": "ERROR: No README data found!",
-  "homepage": "https://github.com/foasho/r3f-dom-masonry#readme"
+  "homepage": "https://github.com/foasho/r3f-dom-masonry#readme",
+  "exports": {
+    ".": {
+      "require": "./dist/index.umd.cjs",
+      "import": "./dist/index.js"
+    }
+  }
 }
