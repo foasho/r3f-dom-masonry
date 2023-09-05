@@ -167,6 +167,10 @@ export type R3FDomAlignProps = {
   borderColor?: string;
   borderWidth?: number;
   items?: Array<DomItemProps>;
+  columns?: [number, number, number]; // sm, md, lg
+  gap?: [number, number, number]; // sm, md, lg
+  media?: [number, number, number]; // sm, md, lg
+  hideScrollBar?: boolean;
 };
 
 export const R3FDomAlign = ({
@@ -175,6 +179,10 @@ export const R3FDomAlign = ({
   borderColor = "#1f2a33",
   borderWidth = 2,
   items = [],
+  columns = [1, 2, 3],
+  gap = [24, 12, 6],
+  media = [640, 768, 1024],
+  hideScrollBar = true,
 }: R3FDomAlignProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -223,11 +231,34 @@ export const R3FDomAlign = ({
     if (scrollRef.current) {
       scrollRef.current.addEventListener("scroll", handleScroll);
     }
+    // ScrollBarの非表示
+    let styleSheet: HTMLStyleElement | null = null;
+    if (hideScrollBar) {
+      styleSheet = document.createElement("style");
+      styleSheet.innerText = "#R3FDomAlignScroll::-webkit-scrollbar { display: none; }";
+      document.head.appendChild(styleSheet);
+    }
+    const commonStyle = document.createElement("style");
+    commonStyle.innerText = `
+      *,
+      ::before,
+      ::after {
+        box-sizing: border-box;
+        border-width: 0;
+        border-style: solid;
+        border-color: #e5e7eb;
+      }
+    `;
+    document.head.appendChild(commonStyle);
     return () => {
       window.removeEventListener("resize", resize);
       if (scrollRef.current) {
         scrollRef.current.removeEventListener("scroll", handleScroll);
       }
+      if (hideScrollBar && styleSheet) {
+        document.head.removeChild(styleSheet);
+      }
+      document.head.removeChild(commonStyle);
     };
   }, []);
 
@@ -314,33 +345,15 @@ export const R3FDomAlign = ({
               WebkitOverflowScrolling: "touch",
             }}
           >
-            {/* <div className={"r3fDomAlignGrid"}>
-              {chunkedItems.map((itemChunk, chunkIndex) => (
-                <div
-                  key={chunkIndex}
-                  style={{
-                    display: "grid",
-                    gap: "1rem",
-                    paddingTop: "2px",
-                    margin: 0,
-                  }}
-                >
-                  {itemChunk.map((item: any, itemIndex: any) => (
-                    <DomItem key={itemIndex} {...item} />
-                  ))}
-                </div>
-              ))}
-            </div> */}
             <Masonry
               items={items}
               config={{
-                columns: [1, 2, 3],
-                gap: [24, 12, 6],
-                media: [640, 768, 1024],
+                columns: columns,
+                gap: gap,
+                media: media,
               }}
               render={(item, index) => <DomItem key={index} {...item} />}
-            >
-            </Masonry>
+            ></Masonry>
           </div>
         </div>
       </div>
@@ -349,7 +362,7 @@ export const R3FDomAlign = ({
 };
 
 /**
- * CameraのAspectを更新するシステムコンポネント
+ * CameraのAspectを更新するカメラシステムコンポネント
  */
 const CanvasSystem = () => {
   const { camera } = useThree();
@@ -364,7 +377,7 @@ const CanvasSystem = () => {
 };
 
 export type DomItemProps = {
-  height: number;
+  height?: number;
   element?: React.JSX.Element;
   src?: string;
   vertexShader?: string;
