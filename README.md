@@ -1,6 +1,6 @@
 # ReactThreeFiber + DomAlignment Masonry
 
-**Storybookデモ↓**
+**Storybook デモ ↓**
 
 **[Demo](https://main.d3iw6f1p5q2t54.amplifyapp.com/?path=/story/r3fdommasonry--default "Demo")**
 
@@ -11,6 +11,8 @@
 - ReactThreeFiber
 - Drei
 
+![Image](https://solb-v1.s3.us-east-2.amazonaws.com/files/R3FDomMasonry.gif)
+
 ## **参考にさせていただいたソースコード**
 
 1. NakanoMisaki さん: three-dom-alignment
@@ -20,8 +22,18 @@
 2. Mr.Renato Pozzi: react-plock
 
    https://github.com/askides/react-plock?ref=reactjsexample.com
+   
 
-## 起動方法(Usage)
+## 使い方(Usage)
+
+### ソースコードを起動
+
+```
+yarn
+yarn dev
+```
+
+### ライブラリ利用
 
 ```
 npm install r3f-dom-masonry
@@ -34,41 +46,39 @@ pnpm install r3f-dom-masonry
 ### Easy Usage
 
 ```ts
-import { R3FDomMasonry } from 'r3f-dom-masonry';
+import { R3FDomMasonry } from "r3f-dom-masonry";
 
 const items = [
-   {
-      element: <div>Dom1</div>,
-   },
-   {
-      element: <div>Dom2</div>,
-   },
-   {
-      element: <div>Dom3</div>,
-   },
-   {
-      element: <div>Dom4</div>,
-   },
-   {
-      element: <div>Dom5</div>,
-   },
-   {
-      element: <div>Dom6</div>,
-   },
-   {
-      element: <div>Dom7</div>,
-   },
-   {
-      element: <div>Dom8</div>,
-   },
-   {
-      element: <div>Dom9</div>,
-   }
+  {
+    element: <div>Dom1</div>,
+  },
+  {
+    element: <div>Dom2</div>,
+  },
+  {
+    element: <div>Dom3</div>,
+  },
+  {
+    element: <div>Dom4</div>,
+  },
+  {
+    element: <div>Dom5</div>,
+  },
+  {
+    element: <div>Dom6</div>,
+  },
+  {
+    element: <div>Dom7</div>,
+  },
+  {
+    element: <div>Dom8</div>,
+  },
+  {
+    element: <div>Dom9</div>,
+  },
 ];
 
 function App() {
-   return (
-      <R3FDomMasonry items={items} />
-   );
+  return <R3FDomMasonry items={items} />;
 }
 ```
