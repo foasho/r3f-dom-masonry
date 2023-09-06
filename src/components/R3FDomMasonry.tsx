@@ -499,7 +499,6 @@ const DomItem = ({ height = 250, element = <div></div>, src = undefined }: DomIt
     aspect,
     scale,
     rect: parentRect,
-    scrollRef,
     offsetPx,
   } = useContext(R3FDomMasonryContext);
   const [ready, setReady] = useState<boolean>(false);

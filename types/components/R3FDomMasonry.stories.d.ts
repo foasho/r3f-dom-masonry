@@ -19,3 +19,7 @@ export declare const Image: Story;
  * Image && Random Heights && Dom Alignment
  */
 export declare const ImageRandomHeights: Story;
+/**
+ * Image and Dom Random Heights
+ */
+export declare const ImageDomRandomHeights: Story;
