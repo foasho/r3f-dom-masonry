@@ -1,3 +1,4 @@
+import React from "react";
 import { R3FDomMasonry, R3FDomMasonryProps } from "./components/R3FDomMasonry";
 
 const getRandomHeight = () => {
