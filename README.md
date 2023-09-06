@@ -22,18 +22,19 @@
 2. Mr.Renato Pozzi: react-plock
 
    https://github.com/askides/react-plock?ref=reactjsexample.com
-   
 
 ## 使い方(Usage)
 
-### ソースコードを起動
+### ソースコードを起動(Run Dev)
 
 ```
 yarn
 yarn dev
+#or
+yarn storybook
 ```
 
-### ライブラリ利用
+### ライブラリ利用(Package Usage)
 
 ```
 npm install r3f-dom-masonry
@@ -78,7 +79,16 @@ const items = [
   },
 ];
 
-function App() {
-  return <R3FDomMasonry items={items} />;
+export default function App() {
+  return (
+    <div
+      style={{
+        width: "100vw",
+        height: "100vh",
+      }}
+    >
+      <R3FDomMasonry items={items} />
+    </div>
+  );
 }
 ```
