@@ -13,16 +13,6 @@
 
 ![Image](https://solb-v1.s3.us-east-2.amazonaws.com/files/R3FDomMasonry.gif)
 
-## **参考にさせていただいたソースコード**
-
-1. NakanoMisaki さん: three-dom-alignment
-
-   https://github.com/mnmxmx/three-dom-alignment/tree/master
-
-2. Mr.Renato Pozzi: react-plock
-
-   https://github.com/askides/react-plock?ref=reactjsexample.com
-
 ## 使い方(Usage)
 
 ### ソースコードを起動(Run Dev)
@@ -92,3 +82,17 @@ export default function App() {
   );
 }
 ```
+
+## **参考にさせていただいたソースコード**
+
+1. Nakano Misaki さん: three-dom-alignment
+
+   https://github.com/mnmxmx/three-dom-alignment/tree/master
+
+2. Mr.Renato Pozzi: react-plock
+
+   https://github.com/askides/react-plock?ref=reactjsexample.com
+
+## LICENSE
+
+MIT LICENSE
