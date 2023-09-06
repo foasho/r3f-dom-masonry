@@ -1,6 +1,6 @@
 {
   "name": "r3f-dom-masonry",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "private": false,
   "publishConfig": {
     "access": "public"
