@@ -25,17 +25,22 @@ import snoiseFrag from "../glsl/snoise.frag";
 import snoiseVert from "../glsl/snoise.vert";
 import imageFrag from "../glsl/image.frag";
 import imageVert from "../glsl/image.vert";
+import initFrag from "../glsl/init.frag";
+import initVert from "../glsl/init.vert";
 import tunnel from "tunnel-rat";
 import { Masonry } from "./Masonry";
 import { Preload } from "@react-three/drei";
+import {
+  UniformsProps,
+  appendFragShaderFromUniforms,
+  appendVertShaderFromUniforms,
+  getInitUniformValue,
+  getShaderUniforms,
+} from "../utils";
 
 export const r3f = tunnel();
 
 const colors = [0x5c6fff, 0xc48aff, 0xff94bd, 0xa9defe, 0xfed462];
-
-export type UniformsProps = {
-  [Key: string]: { value: number };
-};
 
 type ObjectProps = {
   target: HTMLDivElement;
@@ -61,6 +66,7 @@ const Object = ({
   vertexShader = undefined,
   fragmentShader = undefined,
 }: ObjectProps) => {
+  const isShader = vertexShader || fragmentShader ? true : false;
   const [image, setImage] = useState<Texture | null>(null);
   const [displacement, setDisplacement] = useState<Texture | null>(null);
   const { offsetPx, scrollRef, rect: parentRect } = useContext(R3FDomMasonryContext);
@@ -72,19 +78,22 @@ const Object = ({
     let colorIndex1 = colorIndex.splice(Math.floor(colorIndex.length * Math.random()), 1)[0];
     let colorIndex2 = colorIndex.splice(Math.floor(colorIndex.length * Math.random()), 1)[0];
 
-    const uniforms: { [x: string]: { value: any } } = {
-      uTime: { value: Math.random() * 10 },
-      uResolution: { value: new Vector2() },
-      uBorderRadius: { value: radius },
-    };
+    const uniforms: UniformsProps = {};
 
-    if (!image) {
+    // Common Uniforms
+    uniforms.uTime = { value: Math.random() * 10 };
+    uniforms.uResolution = { value: new Vector2() };
+    uniforms.uBorderRadius = { value: radius };
+
+    if (!image && !fragmentShader && !vertexShader) {
+      // Sample Uniforms
       uniforms.uColor1 = { value: new Color(colors[colorIndex1]) };
       uniforms.uColor2 = { value: new Color(colors[colorIndex2]) };
       uniforms.uNoiseScale = { value: Math.random() };
-    } else {
-      uniforms.uImage = { value: image };
-      uniforms.uDisplacement = { value: image };
+    } else if (!fragmentShader && !vertexShader) {
+      // Image Uniforms
+      uniforms.uImage = { value: image as Texture };
+      uniforms.uDisplacement = { value: image as Texture };
       uniforms.uImageAspect = { value: textureAspect };
       uniforms.uPlaneAspect = { value: 1.0 };
       uniforms.uProgress = { value: 0.0 };
@@ -92,24 +101,29 @@ const Object = ({
     if (displacement) {
       uniforms.uDisplacement = { value: displacement };
     }
-
     const shaderMaterial: ShaderMaterialParameters = {
       uniforms: uniforms,
       transparent: true,
     };
+
+    let _f = fragmentShader
+      ? appendFragShaderFromUniforms(fragmentShader, { ...uniforms })
+      : initFrag;
+    let _v = vertexShader ? appendVertShaderFromUniforms(vertexShader, { ...uniforms }) : initVert;
+
     if (vertexShader) {
-      shaderMaterial.vertexShader = vertexShader;
+      shaderMaterial.vertexShader = _v;
     } else {
       shaderMaterial.vertexShader = image ? imageVert : snoiseVert;
     }
     if (fragmentShader) {
-      shaderMaterial.fragmentShader = fragmentShader;
+      shaderMaterial.fragmentShader = _f;
     } else {
       shaderMaterial.fragmentShader = image ? imageFrag : snoiseFrag;
     }
 
     return new ShaderMaterial(shaderMaterial);
-  }, [image, displacement]);
+  }, [image, displacement, fragmentShader, vertexShader]);
 
   useEffect(() => {
     if (texture) {
@@ -135,6 +149,18 @@ const Object = ({
         ref.current.visible = true;
       }
     }
+
+    // 大きさを合わせる
+    if (ref.current && planePosition.current && planeScale.current) {
+      // scrollOffsetを考慮して、planeの位置を更新
+      const newPosition = planePosition.current.clone();
+      if (offsetPx.current > 1) {
+        newPosition.add(new Vector3(0, offsetPx.current * scale.current, 0));
+      }
+      ref.current.position.copy(newPosition);
+      ref.current.scale.copy(planeScale.current);
+    }
+
     // ScrollRefとcurScrollTopから、0~1のforceとして取得する
     let force = 0;
     if (scrollRef.current && image) {
@@ -148,15 +174,6 @@ const Object = ({
       curScrollTop.current = scrollRef.current.scrollTop;
     }
 
-    if (ref.current && planePosition.current && planeScale.current) {
-      // scrollOffsetを考慮して、planeの位置を更新
-      const newPosition = planePosition.current.clone();
-      if (offsetPx.current > 1) {
-        newPosition.add(new Vector3(0, offsetPx.current * scale.current, 0));
-      }
-      ref.current.position.copy(newPosition);
-      ref.current.scale.copy(planeScale.current);
-    }
     // Resolutionを更新
     if (target) {
       const rect = target.getBoundingClientRect();
@@ -252,8 +269,10 @@ export const R3FDomMasonry = ({
   const offsetPx = useRef<number>(0); // pxでスクロールの割合を保持
   const scale = useRef<number>(1);
   const fov = 52;
-  const [rect, setRect] = useState<DOMRect | null>(null);
+  // const [rect, setRect] = useState<DOMRect | null>(null);
   const [aspect, setAspect] = useState<number>(1);
+  const rect = useRef<DOMRect | null>(null);
+  // const aspect = useRef<number>(1);
   const cameraPosition = useRef<Vector3>(new Vector3(0, 0, 300));
   const dimentions = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
   const initDimensions = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
@@ -283,13 +302,13 @@ export const R3FDomMasonry = ({
 
     cameraPosition.current = new Vector3(0, 0, z);
 
-    // 再レンダを発火させる
-    setAspect(_w / _h);
-    setRect(dom);
+    // setRect(dom);
+    rect.current = dom;
     if (resizeHeight) {
       // 高さが変わる場合は、Canvasの再レンダを発火させる
       setRenderCount((prev) => prev + 1);
     }
+    setAspect(_w / _h);
   };
 
   useEffect(() => {
@@ -304,9 +323,10 @@ export const R3FDomMasonry = ({
       // 縦幅が変わったときだけ、resizeHeightをtrueにする
       const dom = ref.current.getBoundingClientRect();
       const _dh = parseInt(dom.height.toFixed());
+      const _dw = parseInt(dom.width.toFixed());
       if (_dh != dimentions.current.height) {
         resize(true);
-      } else {
+      } else if (_dw != dimentions.current.width) {
         resize();
       }
     });
@@ -358,9 +378,6 @@ export const R3FDomMasonry = ({
     }
   });
 
-  // mediaをborderWidth分だけ減らす
-  const mediaWithBorder = media.map((m) => m - 0.5);
-
   const loadingStyle: React.CSSProperties = {
     height: "100%",
     padding: "0 0.5rem",
@@ -381,7 +398,7 @@ export const R3FDomMasonry = ({
         scale: scale,
         fov: fov,
         aspect: aspect,
-        rect: rect,
+        rect: rect.current,
         cameraPosition: cameraPosition.current,
         offset: offset,
         offsetPx: offsetPx,
@@ -455,7 +472,7 @@ export const R3FDomMasonry = ({
                 config={{
                   columns: columns,
                   gap: gap,
-                  media: mediaWithBorder,
+                  media: media,
                 }}
                 render={(item, index) => <DomItem key={index} {...item} />}
               ></Masonry>
@@ -489,7 +506,13 @@ export type DomItemProps = {
   vertexShader?: string;
   fragmentShader?: string;
 };
-const DomItem = ({ height = 250, element = <div></div>, src = undefined }: DomItemProps) => {
+const DomItem = ({
+  height = 250,
+  element = <div></div>,
+  src,
+  vertexShader,
+  fragmentShader,
+}: DomItemProps) => {
   const {
     isBorderRadius,
     borderRadius,
@@ -588,6 +611,8 @@ const DomItem = ({ height = 250, element = <div></div>, src = undefined }: DomIt
             radius={borderRadius}
             texture={src}
             textureAspect={textureAspect}
+            vertexShader={vertexShader}
+            fragmentShader={fragmentShader}
           />
         )}
       </r3f.In>
