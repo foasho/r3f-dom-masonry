@@ -34,8 +34,6 @@ import {
   UniformsProps,
   appendFragShaderFromUniforms,
   appendVertShaderFromUniforms,
-  getInitUniformValue,
-  getShaderUniforms,
 } from "../utils";
 
 export const r3f = tunnel();
