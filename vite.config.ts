@@ -10,6 +10,14 @@ export default defineConfig({
       name: 'index',
       fileName: 'index',
     },
+    rollupOptions: {
+      external: ['react', 'react-dom'],
+      output: {
+        globals: {
+          react: 'React'
+        }
+      }
+    }
   },
   plugins: [react(), glsl(
     {
