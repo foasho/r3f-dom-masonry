@@ -1,11 +1,4 @@
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-  useRef,
-  createContext,
-  useContext
-} from "react";
+import React, { useEffect, useMemo, useState, useRef, createContext, useContext } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   Color,
@@ -194,7 +187,6 @@ const R3FDomMasonryContext = createContext<{
   aspect: number;
   rect: DOMRect | null;
   cameraPosition: Vector3;
-  setCameraPosition: (position: Vector3) => void;
   offset: React.MutableRefObject<number>;
   offsetPx: React.MutableRefObject<number>;
   scrollRef: React.MutableRefObject<HTMLDivElement | null>;
@@ -209,7 +201,6 @@ const R3FDomMasonryContext = createContext<{
   aspect: 1,
   rect: null,
   cameraPosition: new Vector3(0, 0, 300),
-  setCameraPosition: () => {},
   offset: { current: 0 },
   offsetPx: { current: 0 },
   scrollRef: { current: null },
@@ -240,7 +231,9 @@ export const R3FDomMasonry = ({
   hideScrollBar = true,
   centerDom = true,
 }: R3FDomMasonryProps) => {
+  const [renderCount, setRenderCount] = useState<number>(0);
   const ref = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const offset = useRef<number>(0); // 0~1でスクロールの割合を保持
   const offsetPx = useRef<number>(0); // pxでスクロールの割合を保持
@@ -248,27 +241,9 @@ export const R3FDomMasonry = ({
   const fov = 52;
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [aspect, setAspect] = useState<number>(1);
-  const [cameraPosition, setCameraPosition] = useState<Vector3>(new Vector3(0, 0, 300));
-  const dimensions = useRef<Vector2>(new Vector2(0, 0));
-
-  const resize = () => {
-    if (!ref.current) return;
-    const { current } = ref;
-    const dom = current.getBoundingClientRect();
-    const _w = dom.width;
-    const _h = dom.height;
-    dimensions.current.set(_w, _h);
-
-    // Zの位置を1/2Hを計算し、設定する
-    let z = (_h / Math.tan((fov * Math.PI) / 360)) * 0.5;
-
-    setCameraPosition(new Vector3(0, 0, z));
-    scale.current = 1;
-
-    // 再レンダを発火させる
-    setAspect(_w / _h);
-    setRect(dom);
-  };
+  const cameraPosition = useRef<Vector3>(new Vector3(0, 0, 300));
+  const dimentions = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
+  const initDimensions = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
 
   const handleScroll = () => {
     // Offsetの計算
@@ -279,10 +254,49 @@ export const R3FDomMasonry = ({
     }
   };
 
+  const resize = (resizeHeight = false) => {
+    if (!ref.current || !canvasRef.current) return;
+    // parentとcanvasのサイズを確認
+    const dom = ref.current.getBoundingClientRect();
+    // dimensionsを更新
+    dimentions.current.width = parseInt(dom.width.toFixed());
+    dimentions.current.height = parseInt(dom.height.toFixed());
+
+    const _w = dom.width;
+    const _h = dom.height;
+
+    // Zの位置を1/2Hを計算し、設定する
+    let z = (_h / Math.tan((fov * Math.PI) / 360)) * 0.5;
+
+    cameraPosition.current = new Vector3(0, 0, z);
+
+    // 再レンダを発火させる
+    setAspect(_w / _h);
+    setRect(dom);
+    if (resizeHeight) {
+      // 高さが変わる場合は、Canvasの再レンダを発火させる
+      setRenderCount((prev) => prev + 1);
+    }
+  };
+
   useEffect(() => {
     resize();
+    if (ref.current && initDimensions.current.width === 0) {
+      initDimensions.current.width = ref.current.getBoundingClientRect().width;
+      initDimensions.current.height = ref.current.getBoundingClientRect().height;
+    }
     handleScroll();
-    window.addEventListener("resize", resize);
+    window.addEventListener("resize", () => {
+      if (!ref.current) return;
+      // 縦幅が変わったときだけ、resizeHeightをtrueにする
+      const dom = ref.current.getBoundingClientRect();
+      const _dh = parseInt(dom.height.toFixed());
+      if (_dh != dimentions.current.height) {
+        resize(true);
+      } else {
+        resize();
+      }
+    });
     // スクロールイベントの登録
     if (scrollRef.current) {
       scrollRef.current.addEventListener("scroll", handleScroll);
@@ -305,9 +319,10 @@ export const R3FDomMasonry = ({
         border-color: #e5e7eb;
       }
     `;
+
     document.head.appendChild(commonStyle);
     return () => {
-      window.removeEventListener("resize", resize);
+      window.removeEventListener("resize", () => resize);
       if (scrollRef.current) {
         scrollRef.current.removeEventListener("scroll", handleScroll);
       }
@@ -330,6 +345,9 @@ export const R3FDomMasonry = ({
     }
   });
 
+  // mediaをborderWidth分だけ減らす
+  const mediaWithBorder = media.map((m) => m - 0.5);
+
   return (
     <R3FDomMasonryContext.Provider
       value={{
@@ -342,83 +360,75 @@ export const R3FDomMasonry = ({
         fov: fov,
         aspect: aspect,
         rect: rect,
-        cameraPosition: cameraPosition,
-        setCameraPosition: setCameraPosition,
+        cameraPosition: cameraPosition.current,
         offset: offset,
         offsetPx: offsetPx,
         scrollRef: scrollRef,
       }}
     >
       <div
+        ref={ref}
         style={{
           width: "100%",
           height: "100%",
+          position: "relative",
         }}
       >
-        <div
-          ref={ref}
-          style={{
-            width: "100%",
-            height: "100%",
-            position: "relative",
+        <Canvas
+          key={renderCount}
+          ref={canvasRef}
+          shadows
+          gl={{
+            antialias: true,
+            alpha: true,
+          }}
+          camera={{
+            fov: fov,
+            aspect: aspect,
+            near: 0.01,
+            far: 10000,
+            position: cameraPosition.current,
           }}
         >
-          {/** Canvas */}
-          <Canvas
-            shadows
-            gl={{
-              antialias: true,
-              alpha: true,
-            }}
-            camera={{
-              fov: fov,
-              aspect: aspect,
-              near: 0.01,
-              far: 10000,
-              position: cameraPosition,
-            }}
-          >
-            <Scene>
-              <CanvasSystem />
-              <r3f.Out />
-            </Scene>
-          </Canvas>
-
-          {/** Dom */}
+          <Scene>
+            <CanvasSystem />
+            <r3f.Out />
+          </Scene>
+        </Canvas>
+        {/** Dom */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            zIndex: 1,
+            alignItems: "center",
+          }}
+        >
           <div
+            ref={scrollRef}
+            id="R3FDomMasonryScroll"
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
+              overflowY: "auto",
+              overflowX: "hidden",
               height: "100%",
-              zIndex: 1,
-              alignItems: "center",
+              width: "100%",
+              msOverflowStyle: "none" /* IE, Edge 対応 */,
+              scrollbarWidth: "none" /* Firefox 対応 */,
+              WebkitOverflowScrolling: "touch",
             }}
           >
-            <div
-              ref={scrollRef}
-              id="R3FDomMasonryScroll"
-              style={{
-                overflowY: "auto",
-                overflowX: "hidden",
-                height: "100%",
-                width: "100%",
-                msOverflowStyle: "none" /* IE, Edge 対応 */,
-                scrollbarWidth: "none" /* Firefox 対応 */,
-                WebkitOverflowScrolling: "touch",
+            <Masonry
+              items={items}
+              config={{
+                columns: columns,
+                gap: gap,
+                media: mediaWithBorder,
               }}
-            >
-              <Masonry
-                items={items}
-                config={{
-                  columns: columns,
-                  gap: gap,
-                  media: media,
-                }}
-                render={(item, index) => <DomItem key={index} {...item} />}
-              ></Masonry>
-            </div>
+              render={(item, index) => <DomItem key={index} {...item} />}
+            ></Masonry>
           </div>
         </div>
       </div>
@@ -431,12 +441,12 @@ export const R3FDomMasonry = ({
  */
 const CanvasSystem = () => {
   const { camera } = useThree();
-  const { aspect } = useContext(R3FDomMasonryContext);
+  const { aspect, rect } = useContext(R3FDomMasonryContext);
 
   useEffect(() => {
     (camera as PerspectiveCamera).aspect = aspect;
     camera.updateProjectionMatrix();
-  }, [aspect]);
+  }, [aspect, rect]);
 
   return <></>;
 };
@@ -458,6 +468,7 @@ const DomItem = ({ height = 250, element = <div></div>, src = undefined }: DomIt
     aspect,
     scale,
     rect: parentRect,
+    scrollRef,
     offsetPx,
   } = useContext(R3FDomMasonryContext);
   const [ready, setReady] = useState<boolean>(false);
@@ -473,8 +484,9 @@ const DomItem = ({ height = 250, element = <div></div>, src = undefined }: DomIt
     const rect = target.current.getBoundingClientRect();
     // Resolitionを更新する
     resolution.current.set(rect.width * s, rect.height * s);
-    // リサイズ時に、planeのScaleを再設定する
+    // rect.heightが変更されたときにScaleが合わない。
     planeScale.current = new Vector3(rect.width / s, rect.height / s, 1);
+
     // リサイズ時に、planeのPositionを再設定する
     // parentRectも考慮する
     const newPlanePositionX = (rect.left - parentRect.left + rect.width * 0.5 - w * 0.5) * s;
@@ -510,7 +522,6 @@ const DomItem = ({ height = 250, element = <div></div>, src = undefined }: DomIt
   let domStyle: React.CSSProperties = {
     height: "100%",
     padding: "0 0.5rem",
-    maxWidth: "100%",
     position: "relative",
   };
   if (isBorderRadius) {
@@ -531,7 +542,11 @@ const DomItem = ({ height = 250, element = <div></div>, src = undefined }: DomIt
 
   return (
     <div ref={target} style={{ height: `${height}px` }}>
-      {!ready && <div style={domStyle}>Loading...</div>}
+      {!ready && (
+        <div style={domStyle}>
+          <img src={"/loading.gif"} />
+        </div>
+      )}
       {ready && <div style={domStyle}>{element}</div>}
       <r3f.In>
         {ready && parentRect && (
