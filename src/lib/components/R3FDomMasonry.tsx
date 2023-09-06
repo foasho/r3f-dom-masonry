@@ -28,6 +28,7 @@ import imageVert from "../glsl/image.vert";
 import tunnel from "tunnel-rat";
 import { Masonry } from "./Masonry";
 import { Preload } from "@react-three/drei";
+import { getInitUniformValue, getShaderUniforms } from "../utils";
 
 export const r3f = tunnel();
 
@@ -77,22 +78,31 @@ const Object = ({
       uResolution: { value: new Vector2() },
       uBorderRadius: { value: radius },
     };
-
-    if (!image) {
-      uniforms.uColor1 = { value: new Color(colors[colorIndex1]) };
-      uniforms.uColor2 = { value: new Color(colors[colorIndex2]) };
-      uniforms.uNoiseScale = { value: Math.random() };
-    } else {
-      uniforms.uImage = { value: image };
-      uniforms.uDisplacement = { value: image };
-      uniforms.uImageAspect = { value: textureAspect };
-      uniforms.uPlaneAspect = { value: 1.0 };
-      uniforms.uProgress = { value: 0.0 };
-    }
-    if (displacement) {
-      uniforms.uDisplacement = { value: displacement };
+    
+    const customShaderUniforms = getShaderUniforms(fragmentShader, vertexShader);
+    if (customShaderUniforms.length > 0) {
+      customShaderUniforms.forEach((uniform) => {
+        const initValue = getInitUniformValue(uniform.type);
+        uniforms[uniform.type] = { value: initValue };
+      });
     }
 
+    if (!vertexShader && !fragmentShader){
+      if (!image) {
+        uniforms.uColor1 = { value: new Color(colors[colorIndex1]) };
+        uniforms.uColor2 = { value: new Color(colors[colorIndex2]) };
+        uniforms.uNoiseScale = { value: Math.random() };
+      } else {
+        uniforms.uImage = { value: image };
+        uniforms.uDisplacement = { value: image };
+        uniforms.uImageAspect = { value: textureAspect };
+        uniforms.uPlaneAspect = { value: 1.0 };
+        uniforms.uProgress = { value: 0.0 };
+      }
+      if (displacement) {
+        uniforms.uDisplacement = { value: displacement };
+      }
+    }
     const shaderMaterial: ShaderMaterialParameters = {
       uniforms: uniforms,
       transparent: true,
@@ -109,7 +119,7 @@ const Object = ({
     }
 
     return new ShaderMaterial(shaderMaterial);
-  }, [image, displacement]);
+  }, [image, displacement, fragmentShader, vertexShader]);
 
   useEffect(() => {
     if (texture) {
