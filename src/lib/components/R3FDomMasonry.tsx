@@ -66,7 +66,6 @@ const Object = ({
   vertexShader = undefined,
   fragmentShader = undefined,
 }: ObjectProps) => {
-  const isShader = vertexShader || fragmentShader ? true : false;
   const [image, setImage] = useState<Texture | null>(null);
   const [displacement, setDisplacement] = useState<Texture | null>(null);
   const { offsetPx, scrollRef, rect: parentRect } = useContext(R3FDomMasonryContext);
