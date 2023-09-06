@@ -1,4 +1,12 @@
-import React, { useEffect, useMemo, useState, useRef, createContext, useContext } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  createContext,
+  useContext,
+  Suspense,
+} from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   Color,
@@ -19,6 +27,7 @@ import imageFrag from "../glsl/image.frag";
 import imageVert from "../glsl/image.vert";
 import tunnel from "tunnel-rat";
 import { Masonry } from "./Masonry";
+import { Preload } from "@react-three/drei";
 
 export const r3f = tunnel();
 
@@ -169,10 +178,14 @@ const Object = ({
   });
 
   return (
-    <mesh ref={ref}>
-      <planeGeometry args={[1, 1]} />
-      <primitive attach="material" object={shaderMaterial} />
-    </mesh>
+    <>
+      {(!texture || (texture && image)) && (
+        <mesh ref={ref}>
+          <planeGeometry args={[1, 1]} />
+          <primitive attach="material" object={shaderMaterial} />
+        </mesh>
+      )}
+    </>
   );
 };
 
@@ -348,6 +361,15 @@ export const R3FDomMasonry = ({
   // mediaをborderWidth分だけ減らす
   const mediaWithBorder = media.map((m) => m - 0.5);
 
+  const loadingStyle: React.CSSProperties = {
+    height: "100%",
+    padding: "0 0.5rem",
+    position: "relative",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  };
+
   return (
     <R3FDomMasonryContext.Provider
       value={{
@@ -374,63 +396,72 @@ export const R3FDomMasonry = ({
           position: "relative",
         }}
       >
-        <Canvas
-          key={renderCount}
-          ref={canvasRef}
-          shadows
-          gl={{
-            antialias: true,
-            alpha: true,
-          }}
-          camera={{
-            fov: fov,
-            aspect: aspect,
-            near: 0.01,
-            far: 10000,
-            position: cameraPosition.current,
-          }}
+        <Suspense
+          fallback={
+            <div style={loadingStyle}>
+              <img src={"/loading.gif"} />
+            </div>
+          }
         >
-          <Scene>
-            <CanvasSystem />
-            <r3f.Out />
-          </Scene>
-        </Canvas>
-        {/** Dom */}
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            zIndex: 1,
-            alignItems: "center",
-          }}
-        >
-          <div
-            ref={scrollRef}
-            id="R3FDomMasonryScroll"
-            style={{
-              overflowY: "auto",
-              overflowX: "hidden",
-              height: "100%",
-              width: "100%",
-              msOverflowStyle: "none" /* IE, Edge 対応 */,
-              scrollbarWidth: "none" /* Firefox 対応 */,
-              WebkitOverflowScrolling: "touch",
+          <Canvas
+            key={renderCount}
+            ref={canvasRef}
+            shadows
+            gl={{
+              antialias: true,
+              alpha: true,
+            }}
+            camera={{
+              fov: fov,
+              aspect: aspect,
+              near: 0.01,
+              far: 10000,
+              position: cameraPosition.current,
             }}
           >
-            <Masonry
-              items={items}
-              config={{
-                columns: columns,
-                gap: gap,
-                media: mediaWithBorder,
+            <Scene>
+              <CanvasSystem />
+              <r3f.Out />
+              <Preload all />
+            </Scene>
+          </Canvas>
+          {/** Dom */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              zIndex: 1,
+              alignItems: "center",
+            }}
+          >
+            <div
+              ref={scrollRef}
+              id="R3FDomMasonryScroll"
+              style={{
+                overflowY: "auto",
+                overflowX: "hidden",
+                height: "100%",
+                width: "100%",
+                msOverflowStyle: "none" /* IE, Edge 対応 */,
+                scrollbarWidth: "none" /* Firefox 対応 */,
+                WebkitOverflowScrolling: "touch",
               }}
-              render={(item, index) => <DomItem key={index} {...item} />}
-            ></Masonry>
+            >
+              <Masonry
+                items={items}
+                config={{
+                  columns: columns,
+                  gap: gap,
+                  media: mediaWithBorder,
+                }}
+                render={(item, index) => <DomItem key={index} {...item} />}
+              ></Masonry>
+            </div>
           </div>
-        </div>
+        </Suspense>
       </div>
     </R3FDomMasonryContext.Provider>
   );
