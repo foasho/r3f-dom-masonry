@@ -1,31 +1,25 @@
 {
   "compilerOptions": {
+    "jsx": "react",
     "target": "ESNext",
     "useDefineForClassFields": true,
+    "module": "ESNext",
     "lib": ["ESNext", "DOM"],
     "moduleResolution": "Node",
-    "allowJs": true,
-    "module": "ESNext",
-    "skipLibCheck": true,
-    /* Bundler mode */
-    "allowImportingTsExtensions": true,
+    "strict": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "esModuleInterop": true,
     "emitDeclarationOnly": true,
     "declaration": true,
     "declarationDir": "./dist",
-    "jsx": "react-jsx",
-    /* GLSL */
-    "types": ["vite-plugin-glsl/ext"],
-
-    /* Linting */
-    "strict": true,
-    "noFallthroughCasesInSwitch": true,
-    "esModuleInterop": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noImplicitReturns": true
+    "noImplicitReturns": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    /* GLSL */
+    "types": ["vite-plugin-glsl/ext"]
   },
-  "include": ["src"],
-  "exclude": ["node_modules"]
+  "include": ["src"]
 }

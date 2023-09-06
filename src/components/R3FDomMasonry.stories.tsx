@@ -1,3 +1,4 @@
+import React from "react";
 import type { Meta, StoryFn, StoryObj } from "@storybook/react";
 import { R3FDomMasonry, R3FDomMasonryProps } from "./R3FDomMasonry";
 
