@@ -252,8 +252,10 @@ export const R3FDomMasonry = ({
   const offsetPx = useRef<number>(0); // pxでスクロールの割合を保持
   const scale = useRef<number>(1);
   const fov = 52;
-  const [rect, setRect] = useState<DOMRect | null>(null);
+  // const [rect, setRect] = useState<DOMRect | null>(null);
   const [aspect, setAspect] = useState<number>(1);
+  const rect = useRef<DOMRect | null>(null);
+  // const aspect = useRef<number>(1);
   const cameraPosition = useRef<Vector3>(new Vector3(0, 0, 300));
   const dimentions = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
   const initDimensions = useRef<{ width: number; height: number }>({ width: 0, height: 0 });
@@ -283,13 +285,13 @@ export const R3FDomMasonry = ({
 
     cameraPosition.current = new Vector3(0, 0, z);
 
-    // 再レンダを発火させる
-    setAspect(_w / _h);
-    setRect(dom);
+    // setRect(dom);
+    rect.current = dom;
     if (resizeHeight) {
       // 高さが変わる場合は、Canvasの再レンダを発火させる
       setRenderCount((prev) => prev + 1);
     }
+    setAspect(_w / _h);
   };
 
   useEffect(() => {
@@ -304,9 +306,10 @@ export const R3FDomMasonry = ({
       // 縦幅が変わったときだけ、resizeHeightをtrueにする
       const dom = ref.current.getBoundingClientRect();
       const _dh = parseInt(dom.height.toFixed());
+      const _dw = parseInt(dom.width.toFixed());
       if (_dh != dimentions.current.height) {
         resize(true);
-      } else {
+      } else if (_dw != dimentions.current.width) {
         resize();
       }
     });
@@ -358,9 +361,6 @@ export const R3FDomMasonry = ({
     }
   });
 
-  // mediaをborderWidth分だけ減らす
-  const mediaWithBorder = media.map((m) => m - 0.5);
-
   const loadingStyle: React.CSSProperties = {
     height: "100%",
     padding: "0 0.5rem",
@@ -381,7 +381,7 @@ export const R3FDomMasonry = ({
         scale: scale,
         fov: fov,
         aspect: aspect,
-        rect: rect,
+        rect: rect.current,
         cameraPosition: cameraPosition.current,
         offset: offset,
         offsetPx: offsetPx,
@@ -455,7 +455,7 @@ export const R3FDomMasonry = ({
                 config={{
                   columns: columns,
                   gap: gap,
-                  media: mediaWithBorder,
+                  media: media,
                 }}
                 render={(item, index) => <DomItem key={index} {...item} />}
               ></Masonry>
