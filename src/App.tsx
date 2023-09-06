@@ -1,5 +1,5 @@
 import React from "react";
-import { R3FDomMasonry, R3FDomMasonryProps } from "./components/R3FDomMasonry";
+import { R3FDomMasonry, R3FDomMasonryProps } from "./lib";
 
 const getRandomHeight = () => {
   return Math.floor(Math.random() * 320) + 50;
