@@ -11,7 +11,7 @@
 - ReactThreeFiber
 - Drei
 
-![Image](https://solb-v1.s3.us-east-2.amazonaws.com/files/R3FDomMasonry.gif)
+![Image](https://solb-v1.s3.us-east-2.amazonaws.com/blogs/r3f-dom-masonry.png)
 
 ## 使い方(Usage)
 
