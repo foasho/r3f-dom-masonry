@@ -13,7 +13,7 @@
     "isolatedModules": true,
     "emitDeclarationOnly": true,
     "declaration": true,
-    "declarationDir": "./types",
+    "declarationDir": "./dist",
     "jsx": "react-jsx",
     /* GLSL */
     "types": ["vite-plugin-glsl/ext"],
